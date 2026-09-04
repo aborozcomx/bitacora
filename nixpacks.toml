@@ -19,5 +19,6 @@ cmds = [
 
 [phases.build]
 cmds = [
+    "mkdir -p /var/log/nginx",
     "npm run build"
 ]
