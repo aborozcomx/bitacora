@@ -3,22 +3,7 @@
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
-# Fase 1: Compilación de Frontend (Vite, Tailwind v4, Vue 3)
-# ------------------------------------------------------------------------------
-FROM node:22-alpine AS frontend-builder
-WORKDIR /app
-
-# Instalar todas las dependencias de Node (incluyendo devDependencies para Vite)
-COPY package.json package-lock.json ./
-RUN npm ci --include=dev
-
-# Copiar código fuente y compilar assets de producción
-COPY . .
-ENV NODE_ENV=production
-RUN npm run build
-
-# ------------------------------------------------------------------------------
-# Fase 2: Instalación de dependencias PHP con Composer
+# Fase 1: Instalación de dependencias PHP con Composer
 # ------------------------------------------------------------------------------
 FROM composer:2 AS composer-builder
 WORKDIR /app
@@ -30,6 +15,31 @@ RUN composer install \
     --prefer-dist \
     --optimize-autoloader \
     --no-scripts
+
+COPY . .
+# Regenerar rutas y acciones de Wayfinder con el backend PHP disponible
+RUN php artisan wayfinder:generate --with-form --no-interaction || true
+
+# ------------------------------------------------------------------------------
+# Fase 2: Compilación de Frontend (Vite, Tailwind v4, Vue 3)
+# ------------------------------------------------------------------------------
+FROM node:22-alpine AS frontend-builder
+WORKDIR /app
+
+# Instalar todas las dependencias de Node (incluyendo devDependencies para Vite)
+COPY package.json package-lock.json ./
+RUN npm ci --include=dev
+
+# Copiar código fuente
+COPY . .
+
+# Copiar rutas y acciones generadas desde la etapa de Composer
+COPY --from=composer-builder /app/resources/js/actions ./resources/js/actions
+COPY --from=composer-builder /app/resources/js/routes ./resources/js/routes
+COPY --from=composer-builder /app/resources/js/wayfinder ./resources/js/wayfinder
+
+ENV NODE_ENV=production
+RUN npm run build
 
 # ------------------------------------------------------------------------------
 # Fase 3: Imagen de producción (PHP 8.4-FPM Bookworm + Nginx + Supervisord)
