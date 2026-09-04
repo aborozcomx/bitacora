@@ -1,0 +1,110 @@
+<?php
+
+use App\Models\Client;
+use App\Models\ClientBranch;
+use App\Models\User;
+use Database\Seeders\RoleAndPermissionSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
+
+beforeEach(function () {
+    $this->seed(RoleAndPermissionSeeder::class);
+});
+
+test('admin can view clients catalog', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    Client::create([
+        'name' => 'Cliente Test',
+        'code' => 'CLI-TEST',
+        'is_active' => true,
+    ]);
+
+    $response = $this->actingAs($admin)->get('/catalogs/clients');
+
+    $response->assertStatus(200);
+    $response->assertInertia(fn ($page) => $page
+        ->component('catalogs/Clients/Index')
+        ->has('clients.data', 1)
+    );
+});
+
+test('admin can create and update clients', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    // Create
+    $response = $this->actingAs($admin)->post('/catalogs/clients', [
+        'name' => 'Acme Corporation',
+        'code' => 'ACME-01',
+        'contact_name' => 'John Doe',
+        'phone' => '555-1234',
+        'email' => 'contact@acme.com',
+        'is_active' => true,
+    ]);
+
+    $response->assertRedirect();
+    $this->assertDatabaseHas('clients', ['code' => 'ACME-01', 'name' => 'Acme Corporation']);
+
+    $client = Client::where('code', 'ACME-01')->first();
+
+    // Update
+    $updateResponse = $this->actingAs($admin)->put("/catalogs/clients/{$client->id}", [
+        'name' => 'Acme Corp Updated',
+        'code' => 'ACME-01',
+        'contact_name' => 'Jane Doe',
+        'phone' => '555-9999',
+        'email' => 'jane@acme.com',
+        'is_active' => true,
+    ]);
+
+    $updateResponse->assertRedirect();
+    $this->assertDatabaseHas('clients', ['name' => 'Acme Corp Updated', 'contact_name' => 'Jane Doe']);
+});
+
+test('admin can create and update client branches', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $client = Client::create([
+        'name' => 'Global Logistics',
+        'code' => 'GL-01',
+        'is_active' => true,
+    ]);
+
+    // Create branch
+    $response = $this->actingAs($admin)->post("/catalogs/clients/{$client->id}/branches", [
+        'name' => 'Sucursal Norte',
+        'code' => 'SN-01',
+        'address' => 'Av. Industrial 123',
+        'phone' => '555-7777',
+        'is_active' => true,
+    ]);
+
+    $response->assertRedirect();
+    $this->assertDatabaseHas('client_branches', [
+        'client_id' => $client->id,
+        'name' => 'Sucursal Norte',
+        'code' => 'SN-01',
+    ]);
+
+    $branch = ClientBranch::where('code', 'SN-01')->first();
+
+    // Update branch
+    $updateResponse = $this->actingAs($admin)->put("/catalogs/clients/branches/{$branch->id}", [
+        'name' => 'Sucursal Norte Modificada',
+        'code' => 'SN-01',
+        'address' => 'Av. Industrial 456',
+        'phone' => '555-8888',
+        'is_active' => true,
+    ]);
+
+    $updateResponse->assertRedirect();
+    $this->assertDatabaseHas('client_branches', [
+        'id' => $branch->id,
+        'name' => 'Sucursal Norte Modificada',
+    ]);
+});
+
