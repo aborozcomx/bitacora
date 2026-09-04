@@ -11,6 +11,3 @@ cmds = [
 cmds = [
     "npm run build"
 ]
-
-[start]
-cmd = "chown -R www-data:www-data /app/storage /app/bootstrap/cache && chmod -R 775 /app/storage /app/bootstrap/cache && php artisan optimize && /assets/start.sh"
