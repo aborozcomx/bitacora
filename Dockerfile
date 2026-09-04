@@ -7,14 +7,14 @@
 # ------------------------------------------------------------------------------
 FROM node:22-alpine AS frontend-builder
 WORKDIR /app
-ENV NODE_ENV=production
 
-# Instalar dependencias de Node
+# Instalar todas las dependencias de Node (incluyendo devDependencies para Vite)
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --include=dev
 
 # Copiar código fuente y compilar assets de producción
 COPY . .
+ENV NODE_ENV=production
 RUN npm run build
 
 # ------------------------------------------------------------------------------
