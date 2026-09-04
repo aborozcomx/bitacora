@@ -1,5 +1,15 @@
 [phases.setup]
-nixPkgs = ["php84", "php84Packages.composer", "nodejs_22"]
+nixPkgs = [
+  "bash",
+  "coreutils",
+  "curl",
+  "nginx",
+  "nodejs_22"
+  "openssl",
+  "php84"
+  "php84Packages.composer"
+  "wget"
+]
 
 [phases.install]
 cmds = [
