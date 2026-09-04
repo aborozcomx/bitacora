@@ -4,10 +4,10 @@ nixPkgs = [
   "coreutils",
   "curl",
   "nginx",
-  "nodejs_22"
+  "nodejs_22",
   "openssl",
-  "php84"
-  "php84Packages.composer"
+  "php84",
+  "php84Packages.composer",
   "wget"
 ]
 
