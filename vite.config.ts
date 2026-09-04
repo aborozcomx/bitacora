@@ -29,6 +29,7 @@ export default defineConfig({
         }),
         wayfinder({
             formVariants: true,
+            command: (process.env.NODE_ENV === 'production' || process.env.CI) ? 'true' : 'php artisan wayfinder:generate',
         }),
     ],
 });

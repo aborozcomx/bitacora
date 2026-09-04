@@ -7,6 +7,7 @@
 # ------------------------------------------------------------------------------
 FROM node:22-alpine AS frontend-builder
 WORKDIR /app
+ENV NODE_ENV=production
 
 # Instalar dependencias de Node
 COPY package.json package-lock.json ./
@@ -31,20 +32,25 @@ RUN composer install \
     --no-scripts
 
 # ------------------------------------------------------------------------------
-# Fase 3: Imagen de producción (PHP 8.4-FPM + Nginx + Supervisord)
+# Fase 3: Imagen de producción (PHP 8.4-FPM Bookworm + Nginx + Supervisord)
 # ------------------------------------------------------------------------------
-FROM php:8.4-fpm-alpine AS runner
+FROM php:8.4-fpm-bookworm AS runner
 
-# Instalar paquetes base del sistema y servidores
-RUN apk add --no-cache \
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Instalar paquetes base del sistema y servidores (binarios oficiales de Debian)
+RUN apt-get update && apt-get install -y --no-install-recommends \
     nginx \
     supervisor \
     bash \
     curl \
-    sqlite \
-    libpq
+    sqlite3 \
+    libpq5 \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -f /etc/nginx/sites-enabled/default
 
-# Instalar extensiones PHP necesarias para Laravel de forma limpia y ligera
+# Instalar extensiones PHP mediante binarios precompilados rápidos (sin compilar desde fuente)
 ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
 RUN install-php-extensions \
     bcmath \
