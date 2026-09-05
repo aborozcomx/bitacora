@@ -109,6 +109,26 @@ class SalaryReportController extends Controller
 
                 $hasSunday = collect($bitacoras)->contains('is_sunday', true);
 
+                // Group employee bitacoras by folio number to sum same folios across different dates
+                $byFolioForEmployee = collect($bitacoras)
+                    ->groupBy('folio_number')
+                    ->map(function ($folioEntries, $folioNum) {
+                        $datesList = $folioEntries->pluck('date')->filter()->unique()->values()->toArray();
+
+                        return [
+                            'folio_number' => $folioNum,
+                            'dates' => $datesList,
+                            'days_count' => count($datesList),
+                            'total_hours_worked' => round((float) $folioEntries->where('is_absent', false)->sum('hours_worked'), 2),
+                            'total_overtime_hours' => round((float) $folioEntries->where('is_absent', false)->sum('overtime_hours'), 2),
+                            'total_earned' => round((float) $folioEntries->where('is_absent', false)->sum('total_earned'), 2),
+                            'has_sunday' => $folioEntries->contains('is_sunday', true),
+                            'daily_records' => $folioEntries->values()->toArray(),
+                        ];
+                    })
+                    ->values()
+                    ->toArray();
+
                 return [
                     'employee_id' => $employee->id,
                     'employee_code' => $employee->employee_code,
@@ -122,10 +142,12 @@ class SalaryReportController extends Controller
                     'overtime_pay' => round($overtimePay, 2),
                     'total_pay' => round($totalPay, 2),
                     'bitacora_count' => $bitacoraCount,
+                    'unique_folios_count' => count($byFolioForEmployee),
                     'has_sunday' => $hasSunday,
                     'absences_count' => $absencesCount,
                     'absences_dates' => $absencesDates,
                     'bitacoras' => $bitacoras,
+                    'by_folio' => $byFolioForEmployee,
                 ];
             });
 
@@ -139,6 +161,81 @@ class SalaryReportController extends Controller
             $payrollSummary = $payrollSummary->filter(fn ($item) => $item['absences_count'] === 0)->values();
         }
 
+        // Period-wide Folio Consolidation: sum across all employees for each folio
+        $allEntries = BitacoraEmployee::with(['bitacora.branch', 'employee'])
+            ->where(function ($q) use ($startDate, $endDate) {
+                $q->whereBetween('date', [$startDate, $endDate])
+                    ->orWhere(function ($fallbackQ) use ($startDate, $endDate) {
+                        $fallbackQ->whereNull('date')
+                            ->whereHas('bitacora', function ($bQ) use ($startDate, $endDate) {
+                                $bQ->whereBetween('date', [$startDate, $endDate]);
+                            });
+                    });
+            })
+            ->whereHas('bitacora', function ($bQ) use ($userId, $branchId, $user, $userBranchIds) {
+                if ($userId) {
+                    $bQ->where('user_id', $userId);
+                }
+                if ($branchId) {
+                    $bQ->where('branch_id', $branchId);
+                }
+                if (! $user->hasRole('admin')) {
+                    $bQ->whereIn('branch_id', $userBranchIds);
+                }
+            })
+            ->get();
+
+        $byFolio = $allEntries
+            ->groupBy(function ($entry) {
+                return $entry->bitacora->folio_number ?? "Folio #{$entry->bitacora_id}";
+            })
+            ->map(function ($items, $folioNumber) {
+                $datesBreakdown = $items->groupBy(function ($item) {
+                    return $item->date ? (is_string($item->date) ? $item->date : $item->date->format('Y-m-d')) : ($item->bitacora->date ?? 'Sin fecha');
+                })->map(function ($dateItems, $dateStr) {
+                    $isSunday = $dateStr !== 'Sin fecha' ? Carbon::parse($dateStr)->isSunday() : false;
+                    $bitacoraId = $dateItems->first()->bitacora_id;
+                    $presentItems = $dateItems->where('is_absent', false);
+
+                    return [
+                        'date' => $dateStr,
+                        'is_sunday' => $isSunday,
+                        'bitacora_id' => $bitacoraId,
+                        'employees_count' => $dateItems->pluck('employee_id')->unique()->count(),
+                        'regular_hours' => round((float) $presentItems->sum('hours_worked'), 2),
+                        'overtime_hours' => round((float) $presentItems->sum('overtime_hours'), 2),
+                        'regular_pay' => round((float) $presentItems->sum(fn ($e) => $e->hours_worked * $e->base_rate_applied), 2),
+                        'overtime_pay' => round((float) $presentItems->sum(fn ($e) => $e->overtime_hours * $e->overtime_rate_applied), 2),
+                        'total_pay' => round((float) $presentItems->sum('total_earned'), 2),
+                        'absences_count' => $dateItems->where('is_absent', true)->count(),
+                    ];
+                })->values()->sortBy('date')->values();
+
+                $branchNames = $items->pluck('bitacora.branch.name')->filter()->unique()->values()->join(', ');
+                $presentTotalItems = $items->where('is_absent', false);
+
+                $totalRegularHours = $presentTotalItems->sum('hours_worked');
+                $totalOvertimeHours = $presentTotalItems->sum('overtime_hours');
+                $regularPay = $presentTotalItems->sum(fn ($e) => $e->hours_worked * $e->base_rate_applied);
+                $overtimePay = $presentTotalItems->sum(fn ($e) => $e->overtime_hours * $e->overtime_rate_applied);
+                $totalPay = $regularPay + $overtimePay;
+
+                return [
+                    'folio_number' => $folioNumber,
+                    'branch_name' => $branchNames ?: 'N/A',
+                    'days_count' => $datesBreakdown->count(),
+                    'dates' => $datesBreakdown->toArray(),
+                    'employees_count' => $items->pluck('employee_id')->unique()->count(),
+                    'total_regular_hours' => round((float) $totalRegularHours, 2),
+                    'total_overtime_hours' => round((float) $totalOvertimeHours, 2),
+                    'regular_pay' => round((float) $regularPay, 2),
+                    'overtime_pay' => round((float) $overtimePay, 2),
+                    'total_pay' => round((float) $totalPay, 2),
+                ];
+            })
+            ->sortByDesc('total_pay')
+            ->values();
+
         $branches = $user->hasRole('admin')
             ? Branch::where('is_active', true)->get()
             : $user->branches;
@@ -147,6 +244,7 @@ class SalaryReportController extends Controller
 
         return Inertia::render('salaries/Index', [
             'payrollSummary' => $payrollSummary,
+            'byFolio' => $byFolio,
             'branches' => $branches,
             'users' => $users,
             'filters' => [

@@ -91,6 +91,50 @@ class ExpenseReportController extends Controller
             ->with('paymentMethod')
             ->get();
 
+        // Group expenses by Bitácora Folio, with explicit day-by-day breakdown and summation
+        $allPeriodExpenses = (clone $baseQuery)
+            ->with(['bitacora.branch'])
+            ->get();
+
+        $byFolio = $allPeriodExpenses
+            ->groupBy(function ($expense) {
+                return $expense->bitacora->folio_number ?? "Folio #{$expense->bitacora_id}";
+            })
+            ->map(function ($items, $folioNumber) {
+                $datesBreakdown = $items->groupBy(function ($item) {
+                    $rawDate = $item->date ?: ($item->bitacora->date ?? null);
+                    if (! $rawDate) {
+                        return 'Sin fecha';
+                    }
+
+                    return is_string($rawDate) ? substr($rawDate, 0, 10) : Carbon::parse($rawDate)->format('Y-m-d');
+                })->map(function ($dateItems, $dateStr) {
+                    $isSunday = $dateStr !== 'Sin fecha' ? Carbon::parse($dateStr)->isSunday() : false;
+                    $bitacoraId = $dateItems->first()->bitacora_id;
+
+                    return [
+                        'date' => $dateStr,
+                        'is_sunday' => $isSunday,
+                        'amount' => round((float) $dateItems->sum('amount'), 2),
+                        'count' => $dateItems->count(),
+                        'bitacora_id' => $bitacoraId,
+                    ];
+                })->values()->sortBy('date')->values();
+
+                $branchNames = $items->pluck('bitacora.branch.name')->filter()->unique()->values()->join(', ');
+
+                return [
+                    'folio_number' => $folioNumber,
+                    'branch_name' => $branchNames ?: 'N/A',
+                    'total_amount' => round((float) $items->sum('amount'), 2),
+                    'total_count' => $items->count(),
+                    'days_count' => $datesBreakdown->count(),
+                    'dates' => $datesBreakdown->toArray(),
+                ];
+            })
+            ->sortByDesc('total_amount')
+            ->values();
+
         $branches = $user->hasRole('admin')
             ? Branch::where('is_active', true)->get()
             : $user->branches;
@@ -102,6 +146,7 @@ class ExpenseReportController extends Controller
         return Inertia::render('expenses/Index', [
             'expenses' => $expenses,
             'byPaymentMethod' => $byPaymentMethod,
+            'byFolio' => $byFolio,
             'branches' => $branches,
             'users' => $users,
             'paymentMethods' => $paymentMethods,

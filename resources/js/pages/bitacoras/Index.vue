@@ -127,6 +127,16 @@ const calculateBitacoraPayroll = (b: Bitacora) => {
 const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(val);
 };
+
+const folioCounts = computed(() => {
+    const counts: Record<string, number> = {};
+    (props.bitacoras.data || []).forEach(b => {
+        if (b.folio_number) {
+            counts[b.folio_number] = (counts[b.folio_number] || 0) + 1;
+        }
+    });
+    return counts;
+});
 </script>
 
 <template>
@@ -207,9 +217,14 @@ const formatCurrency = (val: number) => {
                     <!-- Top Row: Folio + Date & Sunday badge + Actions -->
                     <div class="flex items-start justify-between gap-2">
                         <div>
-                            <Link :href="`/bitacoras/${b.id}`" class="text-base font-mono font-bold text-indigo-600 dark:text-indigo-400 hover:underline">
-                                {{ b.folio_number }}
-                            </Link>
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <Link :href="`/bitacoras/${b.id}`" class="text-base font-mono font-bold text-indigo-600 dark:text-indigo-400 hover:underline">
+                                    {{ b.folio_number }}
+                                </Link>
+                                <Badge v-if="folioCounts[b.folio_number] > 1" class="bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 text-[10px] py-0 px-1 font-semibold">
+                                    🗓️ Multi-fecha ({{ folioCounts[b.folio_number] }} días)
+                                </Badge>
+                            </div>
                             <div class="flex items-center gap-1.5 font-mono text-xs text-zinc-500 mt-0.5">
                                 <Calendar class="h-3.5 w-3.5 text-zinc-400" />
                                 <span>{{ b.date }}</span>
@@ -296,9 +311,14 @@ const formatCurrency = (val: number) => {
                         >
                             <!-- Folio Number -->
                             <td class="py-3.5 px-4 font-mono font-bold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
-                                <Link :href="`/bitacoras/${b.id}`" class="hover:underline">
-                                    {{ b.folio_number }}
-                                </Link>
+                                <div class="flex items-center gap-1.5">
+                                    <Link :href="`/bitacoras/${b.id}`" class="hover:underline">
+                                        {{ b.folio_number }}
+                                    </Link>
+                                    <Badge v-if="folioCounts[b.folio_number] > 1" class="bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 text-[10px] py-0 px-1 font-semibold">
+                                        {{ folioCounts[b.folio_number] }} fechas
+                                    </Badge>
+                                </div>
                             </td>
 
                             <!-- Date + Sunday Indicator -->

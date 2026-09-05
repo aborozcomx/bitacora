@@ -101,6 +101,12 @@ class BitacoraController extends Controller
         $suggestedPrefix = $defaultFolio ? $defaultFolio->name : 'BIT';
         $suggestedConsecutive = (string) (($defaultFolio ? $defaultFolio->current_consecutive : 0) + 1);
 
+        $existingBitacoraFolios = Bitacora::select('folio_prefix', 'folio_consecutive', 'folio_number')
+            ->distinct()
+            ->orderBy('folio_prefix')
+            ->orderBy('folio_consecutive')
+            ->get();
+
         return Inertia::render('bitacoras/Create', [
             'branches' => $branches,
             'users' => $users,
@@ -108,6 +114,7 @@ class BitacoraController extends Controller
             'folios' => $folios,
             'suggestedPrefix' => $suggestedPrefix,
             'suggestedConsecutive' => $suggestedConsecutive,
+            'existingBitacoraFolios' => $existingBitacoraFolios,
         ]);
     }
 
@@ -130,11 +137,22 @@ class BitacoraController extends Controller
         $consecutive = trim($validated['folio_consecutive']);
         $folioNumber = "{$prefix}-{$consecutive}";
 
+        // A bitácora with the same series and folio is allowed only if the date is different
+        $existsOnSameDate = Bitacora::where('folio_number', $folioNumber)
+            ->where('date', $validated['date'])
+            ->exists();
+
+        if ($existsOnSameDate) {
+            throw ValidationException::withMessages([
+                'folio_consecutive' => "Ya existe una bitácora con el folio '{$folioNumber}' para la fecha {$validated['date']}. Para reutilizar este folio, la fecha debe ser diferente.",
+            ]);
+        }
+
         $bitacora = Bitacora::create([
             'branch_id' => $validated['branch_id'],
             'user_id' => $validated['user_id'],
             'client_id' => $validated['client_id'],
-            'client_branch_id' => $validated['client_branch_id'] ?: null,
+            'client_branch_id' => $validated['client_branch_id'] ?? null,
             'folio_prefix' => $prefix,
             'folio_consecutive' => $consecutive,
             'folio_number' => $folioNumber,
@@ -146,9 +164,8 @@ class BitacoraController extends Controller
         if (is_numeric($consecutive)) {
             $consecutiveInt = (int) $consecutive;
             $folio = Folio::where('name', $prefix)->first();
-            if ($folio) {
-                $newConsecutive = max($folio->current_consecutive + 1, $consecutiveInt);
-                $folio->update(['current_consecutive' => $newConsecutive]);
+            if ($folio && $consecutiveInt > $folio->current_consecutive) {
+                $folio->update(['current_consecutive' => $consecutiveInt]);
             }
         }
 
@@ -349,6 +366,22 @@ class BitacoraController extends Controller
         // If prefix and consecutive provided, generate folio_number
         if (! empty($validated['folio_prefix']) && ! empty($validated['folio_consecutive'])) {
             $validated['folio_number'] = trim($validated['folio_prefix']).'-'.trim($validated['folio_consecutive']);
+        }
+
+        $checkFolioNumber = $validated['folio_number'] ?? $bitacora->folio_number;
+        $checkDate = $validated['date'] ?? $bitacora->date;
+
+        if ($checkFolioNumber && $checkDate) {
+            $duplicateOnSameDate = Bitacora::where('folio_number', $checkFolioNumber)
+                ->where('date', $checkDate)
+                ->where('id', '!=', $bitacora->id)
+                ->exists();
+
+            if ($duplicateOnSameDate) {
+                throw ValidationException::withMessages([
+                    'folio_consecutive' => "Ya existe otra bitácora con el folio '{$checkFolioNumber}' para la fecha {$checkDate}. Para reutilizar este folio, la fecha debe ser diferente.",
+                ]);
+            }
         }
 
         // VALIDATION 4: Normal hours limit is PER EMPLOYEE PER DATE:

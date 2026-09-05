@@ -51,6 +51,12 @@ interface Client {
     branches: ClientBranch[];
 }
 
+interface ExistingBitacoraFolio {
+    folio_prefix: string;
+    folio_consecutive: string;
+    folio_number: string;
+}
+
 const props = defineProps<{
     branches: Branch[];
     users: User[];
@@ -58,6 +64,7 @@ const props = defineProps<{
     folios?: FolioItem[];
     suggestedPrefix: string;
     suggestedConsecutive: string;
+    existingBitacoraFolios?: ExistingBitacoraFolio[];
 }>();
 
 const clientSearch = ref('');
@@ -127,6 +134,17 @@ const onFolioPrefixChange = () => {
     if (selected) {
         form.folio_consecutive = String(selected.current_consecutive + 1);
     }
+};
+
+const existingFoliosForPrefix = computed(() => {
+    if (!props.existingBitacoraFolios) return [];
+    return props.existingBitacoraFolios.filter(
+        f => f.folio_prefix.toUpperCase() === form.folio_prefix.toUpperCase()
+    );
+});
+
+const selectExistingFolio = (consecutive: string) => {
+    form.folio_consecutive = consecutive;
 };
 
 // Computed full folio number preview
@@ -366,6 +384,33 @@ const submit = () => {
                                 class="h-10 rounded-xl text-sm"
                             />
                             <span v-if="form.errors.date" class="text-xs text-red-500 font-medium">{{ form.errors.date }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Existing Folio Quick Pills & Multi-date Information -->
+                    <div class="space-y-2 p-3 bg-zinc-50 dark:bg-zinc-800/40 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs">
+                        <div class="flex items-start gap-2 text-zinc-600 dark:text-zinc-400">
+                            <Info class="h-4 w-4 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
+                            <div>
+                                <span class="font-semibold text-zinc-900 dark:text-zinc-200">Reutilización de folios para múltiples días:</span>
+                                Puedes usar la misma serie y folio siempre que la fecha sea diferente (por ejemplo, para continuar un servicio en varios días). Los reportes sumarán los gastos y salarios de los folios idénticos automáticamente.
+                            </div>
+                        </div>
+
+                        <div v-if="existingFoliosForPrefix.length > 0" class="pt-1.5 border-t border-zinc-200/60 dark:border-zinc-700/60 flex items-center gap-1.5 flex-wrap">
+                            <span class="text-[11px] font-semibold text-zinc-500 uppercase">Folios existentes en {{ form.folio_prefix }}:</span>
+                            <button
+                                v-for="ef in existingFoliosForPrefix"
+                                :key="ef.folio_number"
+                                type="button"
+                                @click="selectExistingFolio(ef.folio_consecutive)"
+                                class="px-2 py-0.5 rounded-md font-mono text-xs transition border"
+                                :class="String(form.folio_consecutive) === String(ef.folio_consecutive)
+                                    ? 'bg-indigo-600 text-white border-indigo-600 font-bold'
+                                    : 'bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100'"
+                            >
+                                {{ ef.folio_number }}
+                            </button>
                         </div>
                     </div>
 

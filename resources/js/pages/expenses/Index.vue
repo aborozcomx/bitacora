@@ -71,6 +71,23 @@ interface GroupedMethod {
     paymentMethod?: { name: string };
 }
 
+interface FolioDateBreakdown {
+    date: string;
+    is_sunday: boolean;
+    amount: number;
+    count: number;
+    bitacora_id: number;
+}
+
+interface GroupedFolio {
+    folio_number: string;
+    branch_name: string;
+    total_amount: number;
+    total_count: number;
+    days_count: number;
+    dates: FolioDateBreakdown[];
+}
+
 const props = defineProps<{
     expenses: {
         data: ExpenseItem[];
@@ -80,6 +97,7 @@ const props = defineProps<{
         total: number;
     };
     byPaymentMethod: GroupedMethod[];
+    byFolio?: GroupedFolio[];
     branches: Branch[];
     users: User[];
     paymentMethods: PaymentMethod[];
@@ -223,6 +241,14 @@ const applyNextWeek = () => {
     startDate.value = currentStart.toISOString().substring(0, 10);
     endDate.value = currentEnd.toISOString().substring(0, 10);
     handleFilter();
+};
+
+const activeTab = ref<'folios' | 'details'>('folios');
+
+const getFolioDaysCount = (folioNumber?: string) => {
+    if (!folioNumber || !props.byFolio) return 1;
+    const found = props.byFolio.find(f => f.folio_number === folioNumber);
+    return found ? found.days_count : 1;
 };
 
 const printReport = () => {
@@ -395,8 +421,118 @@ const printReport = () => {
             </Card>
         </div>
 
-        <!-- EXPENSES TABLE -->
-        <div class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm w-full min-w-0">
+        <!-- TABS SWITCHER -->
+        <div class="flex items-center gap-2 border-b border-zinc-200 dark:border-zinc-800 pb-2 print:hidden">
+            <Button
+                :variant="activeTab === 'folios' ? 'default' : 'outline'"
+                size="sm"
+                @click="activeTab = 'folios'"
+                class="rounded-xl text-xs gap-1.5 shadow-sm"
+                :class="activeTab === 'folios' ? 'bg-amber-600 hover:bg-amber-700 text-white' : ''"
+            >
+                <FileSpreadsheet class="h-3.5 w-3.5" />
+                Sumatoria Consolidada por Folio ({{ byFolio?.length || 0 }} folios)
+            </Button>
+            <Button
+                :variant="activeTab === 'details' ? 'default' : 'outline'"
+                size="sm"
+                @click="activeTab = 'details'"
+                class="rounded-xl text-xs gap-1.5 shadow-sm"
+                :class="activeTab === 'details' ? 'bg-amber-600 hover:bg-amber-700 text-white' : ''"
+            >
+                <Receipt class="h-3.5 w-3.5" />
+                Listado Detallado de Gastos ({{ total_transactions }})
+            </Button>
+        </div>
+
+        <!-- FOLIOS CONSOLIDATED VIEW -->
+        <div v-if="activeTab === 'folios'" class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm w-full min-w-0">
+            <div class="p-4 border-b border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                <div>
+                    <h2 class="font-bold text-zinc-900 dark:text-zinc-100 text-base flex items-center gap-2">
+                        <FileSpreadsheet class="h-5 w-5 text-amber-600" />
+                        Sumatoria Acumulada de Gastos por Folio
+                    </h2>
+                    <p class="text-xs text-zinc-500 mt-0.5">
+                        Agrupación de gastos por folio. Si el folio se utilizó en diferentes días, se muestra el desglose por fecha y el acumulado final.
+                    </p>
+                </div>
+                <span class="text-xs text-zinc-500">
+                    Total Acumulado: <strong class="font-mono text-amber-600 text-sm">${{ grand_total.toFixed(2) }}</strong>
+                </span>
+            </div>
+            <div class="overflow-x-auto w-full">
+                <table class="w-full text-left text-xs sm:text-sm text-zinc-600 dark:text-zinc-300 min-w-[750px]">
+                    <thead class="bg-zinc-50 dark:bg-zinc-800/60 text-xs font-semibold text-zinc-500 uppercase tracking-wider border-b border-zinc-200 dark:border-zinc-800">
+                        <tr>
+                            <th class="py-3 px-4">Folio Bitácora</th>
+                            <th class="py-3 px-4">Sucursal</th>
+                            <th class="py-3 px-4">Días y Fechas de Uso (Desglose Diario)</th>
+                            <th class="py-3 px-4 text-center">Gastos</th>
+                            <th class="py-3 px-4 text-right">Total Acumulado ($)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-zinc-200 dark:divide-zinc-800">
+                        <tr v-for="item in byFolio" :key="item.folio_number" class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/40">
+                            <td class="py-3.5 px-4 font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                                <span class="text-sm">{{ item.folio_number }}</span>
+                                <div v-if="item.days_count > 1" class="mt-1">
+                                    <Badge class="bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300 text-[10px] py-0 font-semibold">
+                                        🗓️ Multi-fecha ({{ item.days_count }} días)
+                                    </Badge>
+                                </div>
+                            </td>
+                            <td class="py-3.5 px-4 font-medium text-zinc-900 dark:text-zinc-100">
+                                {{ item.branch_name }}
+                            </td>
+                            <td class="py-3.5 px-4">
+                                <div class="flex flex-col gap-1.5">
+                                    <div
+                                        v-for="d in item.dates"
+                                        :key="d.date"
+                                        class="inline-flex items-center gap-2 text-xs font-mono"
+                                    >
+                                        <Link
+                                            :href="`/bitacoras/${d.bitacora_id}`"
+                                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800/80 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition text-zinc-800 dark:text-zinc-200"
+                                        >
+                                            <Calendar class="h-3 w-3 text-zinc-400" />
+                                            <strong>{{ d.date }}</strong>
+                                            <Badge v-if="d.is_sunday" class="bg-amber-500 text-white text-[9px] py-0 px-1 font-semibold">☀️ Dom</Badge>
+                                            <span class="text-zinc-400">•</span>
+                                            <span class="text-amber-600 dark:text-amber-400 font-semibold">${{ d.amount.toFixed(2) }}</span>
+                                            <span class="text-zinc-400 text-[10px]">({{ d.count }} {{ d.count === 1 ? 'gasto' : 'gastos' }})</span>
+                                            <ExternalLink class="h-3 w-3 ml-0.5 text-zinc-400" />
+                                        </Link>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="py-3.5 px-4 text-center font-medium">
+                                {{ item.total_count }} {{ item.total_count === 1 ? 'gasto' : 'gastos' }}
+                            </td>
+                            <td class="py-3.5 px-4 text-right font-bold text-amber-600 dark:text-amber-400 font-mono text-base">
+                                ${{ item.total_amount.toFixed(2) }}
+                            </td>
+                        </tr>
+                        <tr v-if="!byFolio || byFolio.length === 0">
+                            <td colspan="5" class="py-10 text-center text-zinc-400">
+                                No hay folios con gastos en el período seleccionado.
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tfoot v-if="byFolio && byFolio.length > 0" class="bg-zinc-50 dark:bg-zinc-800/60 font-semibold text-zinc-900 dark:text-zinc-100 border-t border-zinc-200 dark:border-zinc-800">
+                        <tr>
+                            <td colspan="3" class="py-3 px-4 uppercase text-xs">Total Consolidado de Todos los Folios</td>
+                            <td class="py-3 px-4 text-center">{{ total_transactions }} gastos</td>
+                            <td class="py-3 px-4 text-right font-mono text-base text-amber-600 dark:text-amber-400">${{ grand_total.toFixed(2) }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- EXPENSES TABLE (DETAILED) -->
+        <div v-show="activeTab === 'details'" class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm w-full min-w-0">
             <div class="p-4 border-b border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row justify-between sm:items-center gap-2">
                 <h2 class="font-bold text-zinc-900 dark:text-zinc-100 text-base">
                     Listado Detallado de Gastos por Folio ({{ startDate }} al {{ endDate }})
@@ -429,14 +565,22 @@ const printReport = () => {
                                 : 'hover:bg-zinc-50/50 dark:hover:bg-zinc-800/40'"
                         >
                             <td class="py-3.5 px-4">
-                                <Link
-                                    v-if="ex.bitacora"
-                                    :href="`/bitacoras/${ex.bitacora.id}`"
-                                    class="font-mono font-semibold text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-1"
-                                >
-                                    {{ ex.bitacora.folio_number }} <ExternalLink class="h-3 w-3" />
-                                </Link>
-                                <span v-else class="font-mono font-semibold text-zinc-500">-</span>
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <Link
+                                        v-if="ex.bitacora"
+                                        :href="`/bitacoras/${ex.bitacora.id}`"
+                                        class="font-mono font-semibold text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-1"
+                                    >
+                                        {{ ex.bitacora.folio_number }} <ExternalLink class="h-3 w-3" />
+                                    </Link>
+                                    <span v-else class="font-mono font-semibold text-zinc-500">-</span>
+                                    <Badge
+                                        v-if="getFolioDaysCount(ex.bitacora?.folio_number) > 1"
+                                        class="bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 text-[10px] py-0 px-1 font-semibold"
+                                    >
+                                        {{ getFolioDaysCount(ex.bitacora?.folio_number) }} fechas
+                                    </Badge>
+                                </div>
                                 <div class="text-xs text-zinc-500 dark:text-zinc-400 flex items-center gap-1 mt-0.5 font-mono">
                                     <Calendar class="h-3 w-3" /> {{ ex.date || ex.bitacora?.date }}
                                     <Badge
