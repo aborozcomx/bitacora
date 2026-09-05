@@ -417,4 +417,3 @@ class BitacoraController extends Controller
         return redirect()->route('bitacoras.index')->with('success', 'Bitácora eliminada exitosamente.');
     }
 }
-

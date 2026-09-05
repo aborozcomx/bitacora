@@ -2,10 +2,12 @@
 
 namespace Database\Seeders;
 
-use App\Models\ActivityType;
 use App\Models\Branch;
 use App\Models\CardType;
+use App\Models\Client;
+use App\Models\ClientBranch;
 use App\Models\Employee;
+use App\Models\Folio;
 use App\Models\PaymentCard;
 use App\Models\PaymentMethod;
 use App\Models\User;
@@ -26,7 +28,9 @@ class CatalogSeeder extends Seeder
                 'is_active' => true,
             ]
         );
-        if ($branch1->trashed()) $branch1->restore();
+        if ($branch1->trashed()) {
+            $branch1->restore();
+        }
 
         $branch2 = Branch::withTrashed()->firstOrCreate(
             ['code' => 'SUC-002'],
@@ -37,7 +41,9 @@ class CatalogSeeder extends Seeder
                 'is_active' => true,
             ]
         );
-        if ($branch2->trashed()) $branch2->restore();
+        if ($branch2->trashed()) {
+            $branch2->restore();
+        }
 
         // Manager User
         $managerUser = User::firstOrCreate(
@@ -149,7 +155,7 @@ class CatalogSeeder extends Seeder
         );
 
         // 7. Clients & Client Branches
-        $client1 = \App\Models\Client::firstOrCreate(
+        $client1 = Client::firstOrCreate(
             ['code' => 'CLI-001'],
             [
                 'name' => 'Industrias Metálicas del Norte S.A.',
@@ -160,7 +166,7 @@ class CatalogSeeder extends Seeder
             ]
         );
 
-        \App\Models\ClientBranch::firstOrCreate(
+        ClientBranch::firstOrCreate(
             ['client_id' => $client1->id, 'name' => 'Planta Monterrey Poniente'],
             [
                 'code' => 'MTY-PTE',
@@ -170,7 +176,7 @@ class CatalogSeeder extends Seeder
             ]
         );
 
-        \App\Models\ClientBranch::firstOrCreate(
+        ClientBranch::firstOrCreate(
             ['client_id' => $client1->id, 'name' => 'Cedis Apodaca'],
             [
                 'code' => 'APO-01',
@@ -180,7 +186,7 @@ class CatalogSeeder extends Seeder
             ]
         );
 
-        $client2 = \App\Models\Client::firstOrCreate(
+        $client2 = Client::firstOrCreate(
             ['code' => 'CLI-002'],
             [
                 'name' => 'Comercializadora y Distribución San Ángel',
@@ -191,7 +197,7 @@ class CatalogSeeder extends Seeder
             ]
         );
 
-        \App\Models\ClientBranch::firstOrCreate(
+        ClientBranch::firstOrCreate(
             ['client_id' => $client2->id, 'name' => 'Sucursal Insurgentes Sur'],
             [
                 'code' => 'INS-SUR',
@@ -211,7 +217,7 @@ class CatalogSeeder extends Seeder
         ];
 
         foreach ($defaultFolios as $f) {
-            \App\Models\Folio::firstOrCreate(
+            Folio::firstOrCreate(
                 ['name' => $f['name']],
                 [
                     'description' => $f['description'],

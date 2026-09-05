@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\BitacoraController;
 use App\Http\Controllers\Catalog\ActivityTypeController;
 use App\Http\Controllers\Catalog\BranchController;
+use App\Http\Controllers\Catalog\ClientController;
 use App\Http\Controllers\Catalog\EmployeeController;
 use App\Http\Controllers\Catalog\FolioController;
 use App\Http\Controllers\Catalog\PaymentCatalogController;
@@ -55,10 +56,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('payment-methods/card/{card}', [PaymentCatalogController::class, 'destroyCard'])->name('payment-methods.destroy-card');
 
         // Clients & Client Branches
-        Route::resource('clients', \App\Http\Controllers\Catalog\ClientController::class)->except(['create', 'show', 'edit']);
-        Route::post('clients/{client}/branches', [\App\Http\Controllers\Catalog\ClientController::class, 'storeBranch'])->name('clients.branches.store');
-        Route::put('clients/branches/{branch}', [\App\Http\Controllers\Catalog\ClientController::class, 'updateBranch'])->name('clients.branches.update');
-        Route::delete('clients/branches/{branch}', [\App\Http\Controllers\Catalog\ClientController::class, 'destroyBranch'])->name('clients.branches.destroy');
+        Route::resource('clients', ClientController::class)->except(['create', 'show', 'edit']);
+        Route::post('clients/{client}/branches', [ClientController::class, 'storeBranch'])->name('clients.branches.store');
+        Route::put('clients/branches/{branch}', [ClientController::class, 'updateBranch'])->name('clients.branches.update');
+        Route::delete('clients/branches/{branch}', [ClientController::class, 'destroyBranch'])->name('clients.branches.destroy');
     });
 
     // Administration (Users, Roles & Permissions)

@@ -107,4 +107,3 @@ test('admin can create and update client branches', function () {
         'name' => 'Sucursal Norte Modificada',
     ]);
 });
-

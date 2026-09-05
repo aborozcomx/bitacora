@@ -6,6 +6,7 @@ use App\Models\BitacoraEmployee;
 use App\Models\Branch;
 use App\Models\Employee;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -19,10 +20,10 @@ class SalaryReportController extends Controller
         // Default to current weekly cycle: Wednesday to following Thursday
         if (! $request->filled('start_date') || ! $request->filled('end_date')) {
             $now = now();
-            if ($now->dayOfWeek < \Carbon\Carbon::WEDNESDAY) {
-                $start = $now->copy()->previous(\Carbon\Carbon::WEDNESDAY);
+            if ($now->dayOfWeek < Carbon::WEDNESDAY) {
+                $start = $now->copy()->previous(Carbon::WEDNESDAY);
             } else {
-                $start = $now->copy()->startOfDay()->subDays($now->dayOfWeek - \Carbon\Carbon::WEDNESDAY);
+                $start = $now->copy()->startOfDay()->subDays($now->dayOfWeek - Carbon::WEDNESDAY);
             }
             $end = $start->copy()->addDays(8); // Wednesday to following week Thursday
 
@@ -90,7 +91,7 @@ class SalaryReportController extends Controller
 
                 $bitacoras = $entries->map(function ($entry) {
                     $dateStr = $entry->date ? (is_string($entry->date) ? $entry->date : $entry->date->format('Y-m-d')) : ($entry->bitacora->date ?? null);
-                    $isSunday = $dateStr ? \Carbon\Carbon::parse($dateStr)->isSunday() : false;
+                    $isSunday = $dateStr ? Carbon::parse($dateStr)->isSunday() : false;
 
                     return [
                         'id' => $entry->bitacora_id,

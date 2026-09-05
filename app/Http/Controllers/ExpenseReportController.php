@@ -7,6 +7,7 @@ use App\Models\Branch;
 use App\Models\PaymentCard;
 use App\Models\PaymentMethod;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -20,10 +21,10 @@ class ExpenseReportController extends Controller
         // Default to current weekly cycle: Wednesday to following Thursday
         if (! $request->filled('start_date') || ! $request->filled('end_date')) {
             $now = now();
-            if ($now->dayOfWeek < \Carbon\Carbon::WEDNESDAY) {
-                $start = $now->copy()->previous(\Carbon\Carbon::WEDNESDAY);
+            if ($now->dayOfWeek < Carbon::WEDNESDAY) {
+                $start = $now->copy()->previous(Carbon::WEDNESDAY);
             } else {
-                $start = $now->copy()->startOfDay()->subDays($now->dayOfWeek - \Carbon\Carbon::WEDNESDAY);
+                $start = $now->copy()->startOfDay()->subDays($now->dayOfWeek - Carbon::WEDNESDAY);
             }
             $end = $start->copy()->addDays(8);
 

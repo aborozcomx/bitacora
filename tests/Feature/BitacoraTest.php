@@ -6,7 +6,6 @@ use App\Models\Branch;
 use App\Models\Client;
 use App\Models\ClientBranch;
 use App\Models\Employee;
-use App\Models\PaymentCard;
 use App\Models\PaymentMethod;
 use App\Models\User;
 use Database\Seeders\RoleAndPermissionSeeder;
@@ -299,4 +298,3 @@ test('multiple distinct employees with 8 hours each on the same date succeed', f
 
     $response->assertRedirect("/bitacoras/{$bitacora->id}");
 });
-

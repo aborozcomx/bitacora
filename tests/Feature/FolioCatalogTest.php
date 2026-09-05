@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\Bitacora;
 use App\Models\Branch;
 use App\Models\Client;
 use App\Models\Folio;
