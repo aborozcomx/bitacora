@@ -89,6 +89,9 @@ class SalaryReportController extends Controller
                     return $e->date ? (is_string($e->date) ? $e->date : $e->date->format('Y-m-d')) : null;
                 })->filter()->values()->toArray();
 
+                $partialEntries = $entries->where('is_absent', false)->where('is_partial_shift', true);
+                $partialShiftsCount = $partialEntries->count();
+
                 $bitacoras = $entries->map(function ($entry) {
                     $dateStr = $entry->date ? (is_string($entry->date) ? $entry->date : $entry->date->format('Y-m-d')) : ($entry->bitacora->date ?? null);
                     $isSunday = $dateStr ? Carbon::parse($dateStr)->isSunday() : false;
@@ -104,6 +107,8 @@ class SalaryReportController extends Controller
                         'overtime_hours' => (float) $entry->overtime_hours,
                         'total_earned' => (float) $entry->total_earned,
                         'is_absent' => (bool) $entry->is_absent,
+                        'is_partial_shift' => (bool) $entry->is_partial_shift,
+                        'partial_shift_reason' => $entry->partial_shift_reason,
                     ];
                 })->values()->toArray();
 
@@ -146,6 +151,7 @@ class SalaryReportController extends Controller
                     'has_sunday' => $hasSunday,
                     'absences_count' => $absencesCount,
                     'absences_dates' => $absencesDates,
+                    'partial_shifts_count' => $partialShiftsCount,
                     'bitacoras' => $bitacoras,
                     'by_folio' => $byFolioForEmployee,
                 ];
@@ -159,6 +165,8 @@ class SalaryReportController extends Controller
             $payrollSummary = $payrollSummary->filter(fn ($item) => $item['absences_count'] > 0)->values();
         } elseif ($absenceFilter === 'without_absences') {
             $payrollSummary = $payrollSummary->filter(fn ($item) => $item['absences_count'] === 0)->values();
+        } elseif ($absenceFilter === 'with_partial_shifts') {
+            $payrollSummary = $payrollSummary->filter(fn ($item) => $item['partial_shifts_count'] > 0)->values();
         }
 
         // Period-wide Folio Consolidation: sum across all employees for each folio
@@ -262,6 +270,7 @@ class SalaryReportController extends Controller
                 'grand_total_pay' => round($payrollSummary->sum('total_pay'), 2),
                 'grand_absences_count' => $payrollSummary->sum('absences_count'),
                 'grand_employees_with_absences' => $payrollSummary->where('absences_count', '>', 0)->count(),
+                'grand_partial_shifts_count' => $payrollSummary->sum('partial_shifts_count'),
             ],
         ]);
     }

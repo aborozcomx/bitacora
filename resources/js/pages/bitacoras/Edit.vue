@@ -54,6 +54,8 @@ interface ActivityEmployeeForm {
     id?: number;
     employee_id: number | '';
     is_absent: boolean;
+    is_partial_shift?: boolean;
+    partial_shift_reason?: string;
     hours_worked: number;
     overtime_hours: number;
 }
@@ -125,6 +127,8 @@ const initialActivities: ActivityForm[] = (props.bitacora.activities && props.bi
             id: emp.id,
             employee_id: emp.employee_id,
             is_absent: Boolean(emp.is_absent),
+            is_partial_shift: Boolean(emp.is_partial_shift),
+            partial_shift_reason: emp.partial_shift_reason || '',
             hours_worked: Number(emp.hours_worked) || 0,
             overtime_hours: Number(emp.overtime_hours) || 0,
         })),
@@ -204,6 +208,8 @@ const addEmployeeToActivity = (actIndex: number) => {
     act.employees.push({
         employee_id: defaultEmpId,
         is_absent: false,
+        is_partial_shift: false,
+        partial_shift_reason: '',
         hours_worked: 8,
         overtime_hours: 0,
     });
@@ -213,13 +219,25 @@ const removeEmployeeFromActivity = (actIndex: number, empIndex: number) => {
     form.activities[actIndex].employees.splice(empIndex, 1);
 };
 
-const toggleAbsent = (empRow: ActivityEmployeeForm) => {
-    empRow.is_absent = !empRow.is_absent;
-    if (empRow.is_absent) {
+const setEmployeeShiftType = (empRow: ActivityEmployeeForm, type: 'normal' | 'partial' | 'absent', maxHours: number = 8) => {
+    if (type === 'absent') {
+        empRow.is_absent = true;
+        empRow.is_partial_shift = false;
         empRow.hours_worked = 0;
         empRow.overtime_hours = 0;
-    } else {
-        empRow.hours_worked = 8;
+    } else if (type === 'partial') {
+        empRow.is_absent = false;
+        empRow.is_partial_shift = true;
+        if (empRow.hours_worked === 0 || empRow.hours_worked >= maxHours) {
+            empRow.hours_worked = Math.min(4, maxHours);
+        }
+    } else { // 'normal'
+        empRow.is_absent = false;
+        empRow.is_partial_shift = false;
+        empRow.partial_shift_reason = '';
+        if (empRow.hours_worked === 0) {
+            empRow.hours_worked = maxHours;
+        }
     }
 };
 
@@ -603,6 +621,12 @@ const submit = () => {
                                                         ⚠️ Excede límite ({{ getEmployeeDayHoursInfo(empRow.employee_id, act.date)?.totalHours }}/{{ getEmployeeDayHoursInfo(empRow.employee_id, act.date)?.max }} hrs)
                                                     </span>
                                                     <span
+                                                        v-else-if="empRow.is_partial_shift"
+                                                        class="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-800 dark:text-blue-300 bg-blue-100/90 dark:bg-blue-950/80 px-1.5 py-0.5 rounded"
+                                                    >
+                                                        ⏱️ Solo ocupa {{ empRow.hours_worked }}h (Jornada Parcial{{ empRow.partial_shift_reason ? ': ' + empRow.partial_shift_reason : '' }})
+                                                    </span>
+                                                    <span
                                                         v-else-if="getEmployeeDayHoursInfo(empRow.employee_id, act.date)!.externalHours > 0"
                                                         class="inline-flex items-center gap-1 text-[10px] font-medium text-amber-800 dark:text-amber-300 bg-amber-100/80 dark:bg-amber-950/60 px-1.5 py-0.5 rounded"
                                                     >
@@ -617,17 +641,31 @@ const submit = () => {
                                                 </div>
                                             </td>
 
-                                            <!-- Absent Toggle Button -->
-                                            <td class="py-2 px-3 text-center min-w-[120px]">
-                                                <Button
-                                                    type="button"
-                                                    size="sm"
-                                                    :variant="empRow.is_absent ? 'destructive' : 'secondary'"
-                                                    class="h-7 text-[11px] rounded-lg w-full"
-                                                    @click="toggleAbsent(empRow)"
+                                            <!-- Shift Type / Estado Selector -->
+                                            <td class="py-2 px-3 text-center min-w-[155px]">
+                                                <select
+                                                    :value="empRow.is_absent ? 'absent' : (empRow.is_partial_shift ? 'partial' : 'normal')"
+                                                    @change="(e) => setEmployeeShiftType(empRow, (e.target as HTMLSelectElement).value as any, getMaxHoursForDate(act.date))"
+                                                    class="w-full h-8 rounded-lg border text-xs font-semibold px-2 py-0 transition-colors cursor-pointer"
+                                                    :class="empRow.is_absent
+                                                        ? 'bg-red-50 text-red-700 border-red-300 dark:bg-red-950/60 dark:text-red-300 dark:border-red-800'
+                                                        : (empRow.is_partial_shift
+                                                            ? 'bg-blue-50 text-blue-700 border-blue-300 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800 font-bold'
+                                                            : 'bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800')"
                                                 >
-                                                    {{ empRow.is_absent ? '⚠️ Falta' : '✅ Asistió' }}
-                                                </Button>
+                                                    <option value="normal">✅ Asistió (Normal)</option>
+                                                    <option value="partial">⏱️ Solo N hrs (Parcial)</option>
+                                                    <option value="absent">⚠️ Falta</option>
+                                                </select>
+                                                <!-- Optional reason input if partial shift -->
+                                                <div v-if="empRow.is_partial_shift && !empRow.is_absent" class="mt-1">
+                                                    <input
+                                                        type="text"
+                                                        v-model="empRow.partial_shift_reason"
+                                                        placeholder="Motivo (ej: Medio turno)"
+                                                        class="w-full h-6 text-[10px] px-1.5 rounded border border-blue-200 dark:border-blue-800 bg-white dark:bg-zinc-900 text-blue-900 dark:text-blue-200 placeholder:text-zinc-400"
+                                                    />
+                                                </div>
                                             </td>
 
                                             <!-- Normal Hours -->

@@ -318,6 +318,8 @@ class BitacoraController extends Controller
                     foreach ($actData['employees'] as $empData) {
                         $employee = Employee::findOrFail($empData['employee_id']);
                         $isAbsent = (bool) ($empData['is_absent'] ?? false);
+                        $isPartialShift = ! $isAbsent && (bool) ($empData['is_partial_shift'] ?? false);
+                        $partialShiftReason = $isPartialShift ? ($empData['partial_shift_reason'] ?? null) : null;
                         $hoursWorked = $isAbsent ? 0.0 : (float) $empData['hours_worked'];
                         $overtimeHours = $isAbsent ? 0.0 : (float) $empData['overtime_hours'];
                         $baseRate = (float) $employee->base_hourly_rate;
@@ -329,6 +331,8 @@ class BitacoraController extends Controller
                             'bitacora_activity_id' => $activity->id,
                             'employee_id' => $employee->id,
                             'is_absent' => $isAbsent,
+                            'is_partial_shift' => $isPartialShift,
+                            'partial_shift_reason' => $partialShiftReason,
                             'date' => $actData['date'],
                             'hours_worked' => $hoursWorked,
                             'overtime_hours' => $overtimeHours,
@@ -396,6 +400,8 @@ class BitacoraController extends Controller
             'activities.*.employees' => 'nullable|array',
             'activities.*.employees.*.employee_id' => 'required|exists:employees,id',
             'activities.*.employees.*.is_absent' => 'nullable|boolean',
+            'activities.*.employees.*.is_partial_shift' => 'nullable|boolean',
+            'activities.*.employees.*.partial_shift_reason' => 'nullable|string|max:255',
             'activities.*.employees.*.hours_worked' => 'required|numeric|min:0',
             'activities.*.employees.*.overtime_hours' => 'required|numeric|min:0',
 

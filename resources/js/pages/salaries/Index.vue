@@ -44,6 +44,8 @@ interface BitacoraEntry {
     overtime_hours: number;
     total_earned: number;
     is_absent: boolean;
+    is_partial_shift?: boolean;
+    partial_shift_reason?: string | null;
 }
 
 interface EmployeeFolioBreakdown {
@@ -100,6 +102,7 @@ interface PayrollItem {
     has_sunday?: boolean;
     absences_count: number;
     absences_dates: string[];
+    partial_shifts_count?: number;
     bitacoras: BitacoraEntry[];
     by_folio?: EmployeeFolioBreakdown[];
 }
@@ -112,6 +115,7 @@ interface Totals {
     grand_total_pay: number;
     grand_absences_count: number;
     grand_employees_with_absences: number;
+    grand_partial_shifts_count?: number;
 }
 
 const props = defineProps<{
@@ -340,7 +344,7 @@ const printReport = () => {
                 </div>
 
                 <div>
-                    <label class="text-xs font-semibold text-zinc-500 block mb-1">Filtro de Asistencia</label>
+                    <label class="text-xs font-semibold text-zinc-500 block mb-1">Filtro de Asistencia y Turnos</label>
                     <select
                         v-model="absenceFilter"
                         @change="handleFilter"
@@ -348,7 +352,8 @@ const printReport = () => {
                     >
                         <option value="all">Todos los empleados</option>
                         <option value="with_absences">Solo con faltas registradas</option>
-                        <option value="without_absences">Solo sin faltas (asistencia perfecta)</option>
+                        <option value="with_partial_shifts">Solo con jornadas parciales (Solo N hrs)</option>
+                        <option value="without_absences">Solo sin faltas (asistencia completa)</option>
                     </select>
                 </div>
             </div>
@@ -408,7 +413,12 @@ const printReport = () => {
                     <div class="text-2xl font-bold text-red-600 dark:text-red-400 font-mono">
                         {{ totals.grand_absences_count }} faltas
                     </div>
-                    <p class="text-xs text-red-600/80 mt-1 font-medium">{{ totals.grand_employees_with_absences }} personal con falta</p>
+                    <p class="text-xs text-red-600/80 mt-1 font-medium">
+                        {{ totals.grand_employees_with_absences }} personal con falta
+                        <span v-if="(totals.grand_partial_shifts_count || 0) > 0" class="text-blue-600 dark:text-blue-400 block mt-0.5">
+                            ⏱️ {{ totals.grand_partial_shifts_count }} jornada(s) parcial(es)
+                        </span>
+                    </p>
                 </CardContent>
             </Card>
 
@@ -512,13 +522,19 @@ const printReport = () => {
                                                 ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-900'
                                                 : (b.is_sunday
                                                     ? 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700 font-bold'
-                                                    : 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-900')"
-                                            :title="`${b.folio_number} (${b.date}) ${b.is_sunday ? '[Domingo]' : ''} - ${b.is_absent ? 'Falta' : b.hours_worked + 'h + ' + b.overtime_hours + 'h extra'}`"
+                                                    : (b.is_partial_shift
+                                                        ? 'bg-blue-50 text-blue-800 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900 font-semibold'
+                                                        : 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-900'))"
+                                            :title="`${b.folio_number} (${b.date}) ${b.is_sunday ? '[Domingo]' : ''} ${b.is_partial_shift ? '[Jornada Parcial: ' + b.hours_worked + 'h]' : ''} - ${b.is_absent ? 'Falta' : b.hours_worked + 'h + ' + b.overtime_hours + 'h extra'}`"
                                         >
                                             <span v-if="b.is_absent">⚠️</span>
                                             <span v-else-if="b.is_sunday">☀️</span>
+                                            <span v-else-if="b.is_partial_shift">⏱️</span>
                                             <span>{{ b.folio_number }}</span>
                                             <span class="text-zinc-400">({{ b.date }})</span>
+                                            <span v-if="b.is_partial_shift" class="text-[9px] bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 px-1 rounded font-bold">
+                                                {{ b.hours_worked }}h
+                                            </span>
                                         </Link>
                                         <span v-if="!item.bitacoras || item.bitacoras.length === 0" class="text-xs text-zinc-400 italic">
                                             Sin registros
@@ -526,15 +542,22 @@ const printReport = () => {
                                     </div>
                                 </td>
                                 <td class="py-3.5 px-4 text-center">
-                                    <div v-if="item.absences_count > 0" class="flex flex-col items-center gap-1">
-                                        <Badge variant="destructive" class="bg-red-500 hover:bg-red-600 text-white font-mono text-xs">
-                                            {{ item.absences_count }} {{ item.absences_count === 1 ? 'falta' : 'faltas' }}
+                                    <div class="flex flex-col items-center gap-1">
+                                        <div v-if="item.absences_count > 0" class="flex flex-col items-center gap-0.5">
+                                            <Badge variant="destructive" class="bg-red-500 hover:bg-red-600 text-white font-mono text-xs">
+                                                {{ item.absences_count }} {{ item.absences_count === 1 ? 'falta' : 'faltas' }}
+                                            </Badge>
+                                            <span v-if="item.absences_dates?.length > 0" class="text-[10px] text-zinc-500 font-mono">
+                                                {{ item.absences_dates.join(', ') }}
+                                            </span>
+                                        </div>
+                                        <Badge v-if="(item.partial_shifts_count || 0) > 0" class="bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200 text-[10px] py-0 font-medium">
+                                            ⏱️ {{ item.partial_shifts_count }} parcial{{ item.partial_shifts_count === 1 ? '' : 'es' }}
                                         </Badge>
-                                        <span v-if="item.absences_dates?.length > 0" class="text-[10px] text-zinc-500 font-mono">
-                                            {{ item.absences_dates.join(', ') }}
+                                        <span v-if="item.absences_count === 0 && (!item.partial_shifts_count || item.partial_shifts_count === 0)" class="text-zinc-400 text-xs">
+                                            0
                                         </span>
                                     </div>
-                                    <span v-else class="text-zinc-400 text-xs">0</span>
                                 </td>
                                 <td class="py-3.5 px-4 text-center font-medium">
                                     {{ item.total_regular_hours }} hrs
@@ -652,6 +675,14 @@ const printReport = () => {
                                                     <td class="py-2 px-3 text-zinc-600 dark:text-zinc-400">{{ b.user_name || '-' }}</td>
                                                     <td class="py-2 px-3 text-center">
                                                         <Badge v-if="b.is_absent" variant="destructive" class="text-[10px] py-0">Falta</Badge>
+                                                        <div v-else-if="b.is_partial_shift" class="flex flex-col items-center gap-0.5">
+                                                            <Badge class="bg-blue-100 text-blue-800 dark:bg-blue-950 text-blue-300 border-blue-300 text-[10px] py-0 font-semibold">
+                                                                ⏱️ Parcial ({{ b.hours_worked }}h)
+                                                            </Badge>
+                                                            <span v-if="b.partial_shift_reason" class="text-[9px] text-blue-600 dark:text-blue-400 italic">
+                                                                {{ b.partial_shift_reason }}
+                                                            </span>
+                                                        </div>
                                                         <Badge v-else variant="outline" class="text-[10px] py-0 text-emerald-600 border-emerald-300">Asistió</Badge>
                                                     </td>
                                                     <td class="py-2 px-3 text-center">{{ b.hours_worked }} hrs</td>

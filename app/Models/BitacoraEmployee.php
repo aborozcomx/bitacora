@@ -15,6 +15,8 @@ class BitacoraEmployee extends Model
         'bitacora_activity_id',
         'employee_id',
         'is_absent',
+        'is_partial_shift',
+        'partial_shift_reason',
         'date',
         'hours_worked',
         'overtime_hours',
@@ -27,6 +29,7 @@ class BitacoraEmployee extends Model
     {
         return [
             'is_absent' => 'boolean',
+            'is_partial_shift' => 'boolean',
             'date' => 'date:Y-m-d',
             'hours_worked' => 'decimal:2',
             'overtime_hours' => 'decimal:2',

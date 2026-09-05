@@ -243,8 +243,19 @@ const print = () => {
                                                 <span class="text-zinc-400 font-mono text-[10px]">[{{ emp.employee?.employee_code }}]</span>
                                             </td>
                                             <td class="py-2 px-3 text-center">
-                                                <Badge :variant="emp.is_absent ? 'destructive' : 'secondary'" class="text-[10px] py-0">
-                                                    {{ emp.is_absent ? '⚠️ Falta' : '✅ Asistió' }}
+                                                <Badge v-if="emp.is_absent" variant="destructive" class="text-[10px] py-0">
+                                                    ⚠️ Falta
+                                                </Badge>
+                                                <div v-else-if="emp.is_partial_shift" class="flex flex-col items-center gap-0.5">
+                                                    <Badge class="bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border-blue-300 text-[10px] py-0">
+                                                        ⏱️ Solo {{ emp.hours_worked }}h (Parcial)
+                                                    </Badge>
+                                                    <span v-if="emp.partial_shift_reason" class="text-[9px] text-blue-600 dark:text-blue-400 italic">
+                                                        {{ emp.partial_shift_reason }}
+                                                    </span>
+                                                </div>
+                                                <Badge v-else variant="secondary" class="text-[10px] py-0">
+                                                    ✅ Asistió
                                                 </Badge>
                                             </td>
                                             <td class="py-2 px-3 text-center font-mono">{{ emp.is_absent ? '-' : `${emp.hours_worked} hrs` }}</td>
