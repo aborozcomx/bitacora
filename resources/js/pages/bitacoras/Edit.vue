@@ -23,7 +23,8 @@ import {
     DollarSign,
     Clock,
     CheckCircle2,
-    ShieldAlert
+    ShieldAlert,
+    FileText
 } from '@lucide/vue';
 
 interface Branch { id: number; name: string; }
@@ -360,26 +361,57 @@ const submit = () => {
         </div>
 
         <!-- General Info Banner -->
-        <div class="bg-white dark:bg-zinc-900 p-4 sm:p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs sm:text-sm">
-            <div>
-                <span class="text-zinc-400 block text-[11px] font-semibold uppercase">Cliente</span>
-                <span class="font-bold text-zinc-900 dark:text-zinc-100">{{ bitacora.client?.name || 'Cliente General' }}</span>
-                <span class="text-zinc-400 block text-[11px] mt-0.5">
-                    Sucursal: {{ bitacora.client_branch?.name || bitacora.clientBranch?.name || 'No Aplica / Matriz' }}
-                </span>
+        <div class="bg-white dark:bg-zinc-900 p-4 sm:p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-4">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs sm:text-sm">
+                <div>
+                    <span class="text-zinc-400 block text-[11px] font-semibold uppercase">Cliente</span>
+                    <span class="font-bold text-zinc-900 dark:text-zinc-100">{{ bitacora.client?.name || 'Cliente General' }}</span>
+                    <span class="text-zinc-400 block text-[11px] mt-0.5">
+                        Sucursal: {{ bitacora.client_branch?.name || bitacora.clientBranch?.name || 'No Aplica / Matriz' }}
+                    </span>
+                </div>
+                <div>
+                    <span class="text-zinc-400 block text-[11px] font-semibold uppercase">Encargado Responsable</span>
+                    <span class="font-bold text-zinc-900 dark:text-zinc-100">{{ bitacora.user?.name || 'No asignado' }}</span>
+                    <span class="text-zinc-400 block text-[11px] mt-0.5">{{ bitacora.user?.email }}</span>
+                </div>
+                <div>
+                    <span class="text-zinc-400 block text-[11px] font-semibold uppercase">Fecha Registro</span>
+                    <span class="font-semibold text-zinc-800 dark:text-zinc-200 font-mono">{{ bitacora.date }}</span>
+                </div>
+                <div>
+                    <span class="text-zinc-400 block text-[11px] font-semibold uppercase">Total Actividades</span>
+                    <span class="font-bold text-indigo-600 dark:text-indigo-400">{{ form.activities.length }} actividad(es)</span>
+                </div>
             </div>
-            <div>
-                <span class="text-zinc-400 block text-[11px] font-semibold uppercase">Encargado Responsable</span>
-                <span class="font-bold text-zinc-900 dark:text-zinc-100">{{ bitacora.user?.name || 'No asignado' }}</span>
-                <span class="text-zinc-400 block text-[11px] mt-0.5">{{ bitacora.user?.email }}</span>
-            </div>
-            <div>
-                <span class="text-zinc-400 block text-[11px] font-semibold uppercase">Fecha Registro</span>
-                <span class="font-semibold text-zinc-800 dark:text-zinc-200 font-mono">{{ bitacora.date }}</span>
-            </div>
-            <div>
-                <span class="text-zinc-400 block text-[11px] font-semibold uppercase">Total Actividades</span>
-                <span class="font-bold text-indigo-600 dark:text-indigo-400">{{ form.activities.length }} actividad(es)</span>
+
+            <!-- Observaciones / Comentarios -->
+            <div class="pt-3 border-t border-zinc-100 dark:border-zinc-800">
+                <div class="flex items-start gap-2.5">
+                    <FileText class="h-4 w-4 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
+                    <div class="flex-1 min-w-0 space-y-1">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 block">
+                            Observaciones / Comentarios
+                        </span>
+                        <div v-if="isAdmin">
+                            <textarea
+                                v-model="form.notes"
+                                rows="2"
+                                placeholder="Escribe observaciones o comentarios generales para esta bitácora..."
+                                class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-2.5 text-xs text-zinc-800 dark:text-zinc-200 focus:ring-2 focus:ring-indigo-500"
+                            ></textarea>
+                            <span v-if="form.errors.notes" class="text-xs text-red-500 font-medium">{{ form.errors.notes }}</span>
+                        </div>
+                        <div v-else>
+                            <p v-if="form.notes || bitacora.notes" class="text-xs text-zinc-700 dark:text-zinc-300 whitespace-pre-line bg-zinc-50 dark:bg-zinc-800/40 p-2.5 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                                {{ form.notes || bitacora.notes }}
+                            </p>
+                            <p v-else class="text-xs text-zinc-400 italic">
+                                Sin observaciones o comentarios registrados.
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 

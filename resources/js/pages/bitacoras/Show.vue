@@ -134,29 +134,47 @@ const print = () => {
             </div>
 
             <!-- Details Grid -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/80 dark:border-zinc-800 text-xs">
-                <div>
-                    <span class="text-zinc-400 uppercase font-semibold text-[10px] block">Cliente</span>
-                    <span class="font-bold text-zinc-900 dark:text-zinc-100 block">{{ bitacora.client?.name || 'Cliente General' }}</span>
-                    <span v-if="bitacora.client?.code" class="text-zinc-400 font-mono">[{{ bitacora.client.code }}]</span>
+            <div class="p-4 sm:p-5 rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/80 dark:border-zinc-800 space-y-4 text-xs">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                        <span class="text-zinc-400 uppercase font-semibold text-[10px] block">Cliente</span>
+                        <span class="font-bold text-zinc-900 dark:text-zinc-100 block">{{ bitacora.client?.name || 'Cliente General' }}</span>
+                        <span v-if="bitacora.client?.code" class="text-zinc-400 font-mono">[{{ bitacora.client.code }}]</span>
+                    </div>
+
+                    <div>
+                        <span class="text-zinc-400 uppercase font-semibold text-[10px] block">Sucursal de Cliente</span>
+                        <span class="font-bold text-zinc-900 dark:text-zinc-100 block">
+                            {{ bitacora.client_branch?.name || bitacora.clientBranch?.name || 'No Aplica (Matriz)' }}
+                        </span>
+                    </div>
+
+                    <div>
+                        <span class="text-zinc-400 uppercase font-semibold text-[10px] block">Encargado Responsable</span>
+                        <span class="font-bold text-zinc-900 dark:text-zinc-100 block">{{ bitacora.user?.name || 'No asignado' }}</span>
+                        <span class="text-zinc-400">{{ bitacora.user?.email }}</span>
+                    </div>
+
+                    <div>
+                        <span class="text-zinc-400 uppercase font-semibold text-[10px] block">Fecha de Registro</span>
+                        <span class="font-bold text-zinc-900 dark:text-zinc-100 font-mono block">{{ bitacora.date }}</span>
+                    </div>
                 </div>
 
-                <div>
-                    <span class="text-zinc-400 uppercase font-semibold text-[10px] block">Sucursal de Cliente</span>
-                    <span class="font-bold text-zinc-900 dark:text-zinc-100 block">
-                        {{ bitacora.client_branch?.name || bitacora.clientBranch?.name || 'No Aplica (Matriz)' }}
-                    </span>
-                </div>
-
-                <div>
-                    <span class="text-zinc-400 uppercase font-semibold text-[10px] block">Encargado Responsable</span>
-                    <span class="font-bold text-zinc-900 dark:text-zinc-100 block">{{ bitacora.user?.name || 'No asignado' }}</span>
-                    <span class="text-zinc-400">{{ bitacora.user?.email }}</span>
-                </div>
-
-                <div>
-                    <span class="text-zinc-400 uppercase font-semibold text-[10px] block">Fecha de Registro</span>
-                    <span class="font-bold text-zinc-900 dark:text-zinc-100 font-mono block">{{ bitacora.date }}</span>
+                <!-- Observaciones / Comentarios -->
+                <div class="pt-3 border-t border-zinc-200/80 dark:border-zinc-700/60 flex items-start gap-2.5">
+                    <FileText class="h-4 w-4 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
+                    <div class="flex-1 min-w-0 space-y-0.5">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block">
+                            Observaciones / Comentarios
+                        </span>
+                        <p v-if="bitacora.notes" class="text-zinc-700 dark:text-zinc-300 whitespace-pre-line leading-relaxed text-xs">
+                            {{ bitacora.notes }}
+                        </p>
+                        <p v-else class="text-zinc-400 italic text-xs">
+                            Sin observaciones o comentarios registrados.
+                        </p>
+                    </div>
                 </div>
             </div>
 
