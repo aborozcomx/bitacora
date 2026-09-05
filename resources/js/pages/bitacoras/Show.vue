@@ -161,20 +161,17 @@ const print = () => {
                     </div>
                 </div>
 
-                <!-- Observaciones / Comentarios -->
-                <div class="pt-3 border-t border-zinc-200/80 dark:border-zinc-700/60 flex items-start gap-2.5">
-                    <FileText class="h-4 w-4 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
-                    <div class="flex-1 min-w-0 space-y-0.5">
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block">
-                            Observaciones / Comentarios
-                        </span>
-                        <p v-if="bitacora.notes" class="text-zinc-700 dark:text-zinc-300 whitespace-pre-line leading-relaxed text-xs">
-                            {{ bitacora.notes }}
-                        </p>
-                        <p v-else class="text-zinc-400 italic text-xs">
-                            Sin observaciones o comentarios registrados.
-                        </p>
-                    </div>
+                <!-- Notas u Observaciones Generales -->
+                <div class="pt-3 border-t border-zinc-200/80 dark:border-zinc-700/60">
+                    <span class="text-zinc-400 uppercase font-semibold text-[10px] block">
+                        Notas u Observaciones Generales
+                    </span>
+                    <p v-if="bitacora.notes" class="text-zinc-800 dark:text-zinc-200 text-xs sm:text-sm whitespace-pre-line mt-1 font-medium">
+                        {{ bitacora.notes }}
+                    </p>
+                    <p v-else class="text-zinc-400 text-xs italic mt-1">
+                        Sin observaciones registradas.
+                    </p>
                 </div>
             </div>
 
