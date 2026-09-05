@@ -34,7 +34,9 @@ interface ClientBranch {
     name: string;
     code: string | null;
     address: string | null;
+    contact_name: string | null;
     phone: string | null;
+    email: string | null;
     is_active: boolean;
 }
 
@@ -42,9 +44,6 @@ interface Client {
     id: number;
     name: string;
     code: string;
-    contact_name: string | null;
-    phone: string | null;
-    email: string | null;
     is_active: boolean;
     branches: ClientBranch[];
 }
@@ -59,7 +58,6 @@ const columns: ColumnDef[] = [
     { key: 'expander', label: '', align: 'center' },
     { key: 'code', label: 'Código', sortable: true },
     { key: 'name', label: 'Razón Social / Nombre', sortable: true },
-    { key: 'contact', label: 'Contacto', sortable: true },
     { key: 'branches_count', label: 'Sucursales', sortable: true, align: 'center' },
     { key: 'is_active', label: 'Estado', sortable: true },
     { key: 'actions', label: 'Acciones', align: 'right' },
@@ -84,9 +82,6 @@ const isEditingClient = ref(false);
 const clientForm = useForm({
     name: '',
     code: '',
-    contact_name: '',
-    phone: '',
-    email: '',
     is_active: true,
 });
 
@@ -104,9 +99,6 @@ const openEditClientModal = (client: Client) => {
     clientForm.clearErrors();
     clientForm.name = client.name;
     clientForm.code = client.code;
-    clientForm.contact_name = client.contact_name || '';
-    clientForm.phone = client.phone || '';
-    clientForm.email = client.email || '';
     clientForm.is_active = client.is_active;
     showClientModal.value = true;
 };
@@ -156,7 +148,9 @@ const branchForm = useForm({
     name: '',
     code: '',
     address: '',
+    contact_name: '',
     phone: '',
+    email: '',
     is_active: true,
 });
 
@@ -177,7 +171,9 @@ const openEditBranchModal = (client: Client, branch: ClientBranch) => {
     branchForm.name = branch.name;
     branchForm.code = branch.code || '';
     branchForm.address = branch.address || '';
+    branchForm.contact_name = branch.contact_name || '';
     branchForm.phone = branch.phone || '';
+    branchForm.email = branch.email || '';
     branchForm.is_active = branch.is_active;
     showBranchModal.value = true;
 };
@@ -241,7 +237,7 @@ const confirmDeleteBranch = () => {
         <DataTable
             :columns="columns"
             :data="clients.data"
-            searchPlaceholder="Buscar cliente por código, nombre o contacto..."
+            searchPlaceholder="Buscar cliente o sucursal por código, nombre, contacto..."
         >
             <template #cell-expander="{ row }">
                 <Button
@@ -263,18 +259,6 @@ const confirmDeleteBranch = () => {
             <template #cell-name="{ row }">
                 <div>
                     <span class="font-semibold text-zinc-900 dark:text-zinc-100 block">{{ row.name }}</span>
-                    <span v-if="row.email" class="text-xs text-zinc-400 flex items-center gap-1 mt-0.5">
-                        <Mail class="h-3 w-3" /> {{ row.email }}
-                    </span>
-                </div>
-            </template>
-
-            <template #cell-contact="{ row }">
-                <div class="text-sm">
-                    <span class="text-zinc-800 dark:text-zinc-200 font-medium block">{{ row.contact_name || 'N/A' }}</span>
-                    <span v-if="row.phone" class="text-xs text-zinc-400 flex items-center gap-1 mt-0.5">
-                        <Phone class="h-3 w-3" /> {{ row.phone }}
-                    </span>
                 </div>
             </template>
 
@@ -303,7 +287,7 @@ const confirmDeleteBranch = () => {
             <!-- Expanded row showing Client Branches -->
             <template #expanded-row="{ row }">
                 <tr v-if="expandedClientIds.includes(row.id)" class="bg-zinc-50/80 dark:bg-zinc-800/40 border-b border-zinc-200 dark:border-zinc-800">
-                    <td colspan="7" class="p-4 pl-12">
+                    <td colspan="6" class="p-4 pl-12">
                         <div class="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-3">
                             <div class="flex items-center justify-between">
                                 <h4 class="text-xs font-bold uppercase text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
@@ -320,8 +304,9 @@ const confirmDeleteBranch = () => {
                                     <tr>
                                         <th class="py-2 px-3">Código</th>
                                         <th class="py-2 px-3">Nombre de Sucursal</th>
+                                        <th class="py-2 px-3">Contacto</th>
+                                        <th class="py-2 px-3">Teléfono / Correo</th>
                                         <th class="py-2 px-3">Dirección</th>
-                                        <th class="py-2 px-3">Teléfono</th>
                                         <th class="py-2 px-3 text-center">Estado</th>
                                         <th class="py-2 px-3 text-right">Acciones</th>
                                     </tr>
@@ -334,11 +319,25 @@ const confirmDeleteBranch = () => {
                                         <td class="py-2.5 px-3 font-semibold text-zinc-900 dark:text-zinc-100">
                                             {{ branch.name }}
                                         </td>
-                                        <td class="py-2.5 px-3 text-zinc-600 dark:text-zinc-400">
-                                            {{ branch.address || 'No especificada' }}
+                                        <td class="py-2.5 px-3">
+                                            <span class="text-zinc-800 dark:text-zinc-200 font-medium block">{{ branch.contact_name || 'Sin contacto' }}</span>
                                         </td>
                                         <td class="py-2.5 px-3 text-zinc-600 dark:text-zinc-400">
-                                            {{ branch.phone || 'N/A' }}
+                                            <div class="flex flex-col gap-0.5">
+                                                <span v-if="branch.phone" class="flex items-center gap-1">
+                                                    <Phone class="h-3 w-3 text-zinc-400 shrink-0" /> {{ branch.phone }}
+                                                </span>
+                                                <span v-if="branch.email" class="flex items-center gap-1 text-zinc-500">
+                                                    <Mail class="h-3 w-3 text-zinc-400 shrink-0" /> {{ branch.email }}
+                                                </span>
+                                                <span v-if="!branch.phone && !branch.email" class="text-zinc-400 italic">N/A</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-2.5 px-3 text-zinc-600 dark:text-zinc-400 max-w-[200px] truncate" :title="branch.address || ''">
+                                            <span v-if="branch.address" class="flex items-center gap-1">
+                                                <MapPin class="h-3 w-3 text-zinc-400 shrink-0" /> {{ branch.address }}
+                                            </span>
+                                            <span v-else class="text-zinc-400 italic">No especificada</span>
                                         </td>
                                         <td class="py-2.5 px-3 text-center">
                                             <Badge :variant="branch.is_active ? 'default' : 'secondary'" class="text-[10px] py-0">
@@ -355,7 +354,7 @@ const confirmDeleteBranch = () => {
                                         </td>
                                     </tr>
                                     <tr v-if="!row.branches || row.branches.length === 0">
-                                        <td colspan="6" class="py-4 text-center text-zinc-400 italic">
+                                        <td colspan="7" class="py-4 text-center text-zinc-400 italic">
                                             Este cliente no tiene sucursales registradas (aplica como cliente único / matriz).
                                         </td>
                                     </tr>
@@ -385,22 +384,6 @@ const confirmDeleteBranch = () => {
                     <Label for="client_name">Razón Social / Nombre Comercial</Label>
                     <Input id="client_name" v-model="clientForm.name" placeholder="Ej: Industrias del Norte S.A." required />
                     <span v-if="clientForm.errors.name" class="text-xs text-red-500">{{ clientForm.errors.name }}</span>
-                </div>
-
-                <div class="space-y-1">
-                    <Label for="client_contact">Nombre de Contacto</Label>
-                    <Input id="client_contact" v-model="clientForm.contact_name" placeholder="Ej: Lic. Roberto Garza" />
-                </div>
-
-                <div class="grid grid-cols-2 gap-2">
-                    <div class="space-y-1">
-                        <Label for="client_phone">Teléfono</Label>
-                        <Input id="client_phone" v-model="clientForm.phone" placeholder="Ej: 818-123-4567" />
-                    </div>
-                    <div class="space-y-1">
-                        <Label for="client_email">Correo Electrónico</Label>
-                        <Input id="client_email" type="email" v-model="clientForm.email" placeholder="contacto@cliente.com" />
-                    </div>
                 </div>
 
                 <div class="flex items-center gap-2 pt-2">
@@ -439,13 +422,27 @@ const confirmDeleteBranch = () => {
                 </div>
 
                 <div class="space-y-1">
-                    <Label for="branch_address">Dirección</Label>
-                    <Input id="branch_address" v-model="branchForm.address" placeholder="Ej: Parque Industrial Mitras Lote 4" />
+                    <Label for="branch_contact">Nombre de Contacto</Label>
+                    <Input id="branch_contact" v-model="branchForm.contact_name" placeholder="Ej: Lic. Roberto Garza" />
+                    <span v-if="branchForm.errors.contact_name" class="text-xs text-red-500">{{ branchForm.errors.contact_name }}</span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="space-y-1">
+                        <Label for="branch_phone">Teléfono</Label>
+                        <Input id="branch_phone" v-model="branchForm.phone" placeholder="Ej: 818-123-4568" />
+                        <span v-if="branchForm.errors.phone" class="text-xs text-red-500">{{ branchForm.errors.phone }}</span>
+                    </div>
+                    <div class="space-y-1">
+                        <Label for="branch_email">Correo Electrónico</Label>
+                        <Input id="branch_email" type="email" v-model="branchForm.email" placeholder="contacto@sucursal.com" />
+                        <span v-if="branchForm.errors.email" class="text-xs text-red-500">{{ branchForm.errors.email }}</span>
+                    </div>
                 </div>
 
                 <div class="space-y-1">
-                    <Label for="branch_phone">Teléfono de la Sucursal</Label>
-                    <Input id="branch_phone" v-model="branchForm.phone" placeholder="Ej: 818-123-4568" />
+                    <Label for="branch_address">Dirección</Label>
+                    <Input id="branch_address" v-model="branchForm.address" placeholder="Ej: Parque Industrial Mitras Lote 4" />
                 </div>
 
                 <div class="flex items-center gap-2 pt-2">

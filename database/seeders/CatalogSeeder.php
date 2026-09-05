@@ -159,9 +159,6 @@ class CatalogSeeder extends Seeder
             ['code' => 'CLI-001'],
             [
                 'name' => 'Industrias Metálicas del Norte S.A.',
-                'contact_name' => 'Lic. Roberto Garza',
-                'phone' => '818-123-4567',
-                'email' => 'contacto@imnorte.com',
                 'is_active' => true,
             ]
         );
@@ -171,7 +168,9 @@ class CatalogSeeder extends Seeder
             [
                 'code' => 'MTY-PTE',
                 'address' => 'Parque Industrial Mitras Lote 4',
+                'contact_name' => 'Lic. Roberto Garza',
                 'phone' => '818-123-4568',
+                'email' => 'rgarza@imnorte.com',
                 'is_active' => true,
             ]
         );
@@ -181,7 +180,9 @@ class CatalogSeeder extends Seeder
             [
                 'code' => 'APO-01',
                 'address' => 'Carretera a Miguel Alemán km 14',
+                'contact_name' => 'Ing. Laura Serna',
                 'phone' => '818-123-4569',
+                'email' => 'lserna@imnorte.com',
                 'is_active' => true,
             ]
         );
@@ -190,9 +191,6 @@ class CatalogSeeder extends Seeder
             ['code' => 'CLI-002'],
             [
                 'name' => 'Comercializadora y Distribución San Ángel',
-                'contact_name' => 'Ing. Diana Valdés',
-                'phone' => '555-987-6543',
-                'email' => 'dvaldes@sanangel.com.mx',
                 'is_active' => true,
             ]
         );
@@ -202,7 +200,9 @@ class CatalogSeeder extends Seeder
             [
                 'code' => 'INS-SUR',
                 'address' => 'Av. Insurgentes Sur 1200',
+                'contact_name' => 'Ing. Diana Valdés',
                 'phone' => '555-987-6544',
+                'email' => 'dvaldes@sanangel.com.mx',
                 'is_active' => true,
             ]
         );

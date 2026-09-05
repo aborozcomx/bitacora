@@ -39,9 +39,6 @@ test('admin can create and update clients', function () {
     $response = $this->actingAs($admin)->post('/catalogs/clients', [
         'name' => 'Acme Corporation',
         'code' => 'ACME-01',
-        'contact_name' => 'John Doe',
-        'phone' => '555-1234',
-        'email' => 'contact@acme.com',
         'is_active' => true,
     ]);
 
@@ -54,17 +51,14 @@ test('admin can create and update clients', function () {
     $updateResponse = $this->actingAs($admin)->put("/catalogs/clients/{$client->id}", [
         'name' => 'Acme Corp Updated',
         'code' => 'ACME-01',
-        'contact_name' => 'Jane Doe',
-        'phone' => '555-9999',
-        'email' => 'jane@acme.com',
         'is_active' => true,
     ]);
 
     $updateResponse->assertRedirect();
-    $this->assertDatabaseHas('clients', ['name' => 'Acme Corp Updated', 'contact_name' => 'Jane Doe']);
+    $this->assertDatabaseHas('clients', ['name' => 'Acme Corp Updated', 'code' => 'ACME-01']);
 });
 
-test('admin can create and update client branches', function () {
+test('admin can create and update client branches with contact info', function () {
     $admin = User::factory()->create();
     $admin->assignRole('admin');
 
@@ -74,12 +68,14 @@ test('admin can create and update client branches', function () {
         'is_active' => true,
     ]);
 
-    // Create branch
+    // Create branch with contact info
     $response = $this->actingAs($admin)->post("/catalogs/clients/{$client->id}/branches", [
         'name' => 'Sucursal Norte',
         'code' => 'SN-01',
         'address' => 'Av. Industrial 123',
+        'contact_name' => 'John Doe',
         'phone' => '555-7777',
+        'email' => 'contact@snorte.com',
         'is_active' => true,
     ]);
 
@@ -88,6 +84,9 @@ test('admin can create and update client branches', function () {
         'client_id' => $client->id,
         'name' => 'Sucursal Norte',
         'code' => 'SN-01',
+        'contact_name' => 'John Doe',
+        'phone' => '555-7777',
+        'email' => 'contact@snorte.com',
     ]);
 
     $branch = ClientBranch::where('code', 'SN-01')->first();
@@ -97,7 +96,9 @@ test('admin can create and update client branches', function () {
         'name' => 'Sucursal Norte Modificada',
         'code' => 'SN-01',
         'address' => 'Av. Industrial 456',
+        'contact_name' => 'Jane Doe',
         'phone' => '555-8888',
+        'email' => 'jane@snorte.com',
         'is_active' => true,
     ]);
 
@@ -105,5 +106,38 @@ test('admin can create and update client branches', function () {
     $this->assertDatabaseHas('client_branches', [
         'id' => $branch->id,
         'name' => 'Sucursal Norte Modificada',
+        'contact_name' => 'Jane Doe',
+        'email' => 'jane@snorte.com',
+        'phone' => '555-8888',
     ]);
+});
+
+test('admin can search clients by branch contact name or email', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $client = Client::create([
+        'name' => 'Alfa Corp',
+        'code' => 'ALF-01',
+        'is_active' => true,
+    ]);
+
+    ClientBranch::create([
+        'client_id' => $client->id,
+        'name' => 'Sucursal Sur',
+        'code' => 'SS-01',
+        'contact_name' => 'Carlos Slim',
+        'email' => 'carlos@alfacorp.com',
+        'phone' => '555-4321',
+        'is_active' => true,
+    ]);
+
+    $response = $this->actingAs($admin)->get('/catalogs/clients?search=Slim');
+
+    $response->assertStatus(200);
+    $response->assertInertia(fn ($page) => $page
+        ->component('catalogs/Clients/Index')
+        ->has('clients.data', 1)
+        ->where('clients.data.0.code', 'ALF-01')
+    );
 });

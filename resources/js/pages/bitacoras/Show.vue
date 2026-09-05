@@ -25,9 +25,9 @@ interface Bitacora {
     notes: string | null;
     branch: { name: string; address?: string; phone?: string };
     user?: { name: string; email: string };
-    client?: { name: string; code: string; contact_name?: string; phone?: string };
-    client_branch?: { name: string; code?: string; address?: string };
-    clientBranch?: { name: string; code?: string; address?: string };
+    client?: { name: string; code: string };
+    client_branch?: { name: string; code?: string; address?: string; contact_name?: string; phone?: string; email?: string };
+    clientBranch?: { name: string; code?: string; address?: string; contact_name?: string; phone?: string; email?: string };
     activities: {
         id: number;
         date: string;

@@ -17,7 +17,9 @@ class ClientBranch extends Model
         'name',
         'code',
         'address',
+        'contact_name',
         'phone',
+        'email',
         'is_active',
     ];
 

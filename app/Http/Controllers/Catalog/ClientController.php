@@ -17,9 +17,17 @@ class ClientController extends Controller
         $clients = Client::query()
             ->with(['branches'])
             ->when($request->search, function ($query, $search) {
-                $query->where('name', 'like', "%{$search}%")
-                    ->orWhere('code', 'like', "%{$search}%")
-                    ->orWhere('contact_name', 'like', "%{$search}%");
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('code', 'like', "%{$search}%")
+                        ->orWhereHas('branches', function ($bq) use ($search) {
+                            $bq->where('name', 'like', "%{$search}%")
+                                ->orWhere('contact_name', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%")
+                                ->orWhere('phone', 'like', "%{$search}%")
+                                ->orWhere('address', 'like', "%{$search}%");
+                        });
+                });
             })
             ->latest()
             ->paginate(10)
@@ -36,9 +44,6 @@ class ClientController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'code' => 'required|string|max:50|unique:clients,code',
-            'contact_name' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:50',
-            'email' => 'nullable|email|max:255',
             'is_active' => 'boolean',
         ]);
 
@@ -52,9 +57,6 @@ class ClientController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'code' => 'required|string|max:50|unique:clients,code,'.$client->id,
-            'contact_name' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:50',
-            'email' => 'nullable|email|max:255',
             'is_active' => 'boolean',
         ]);
 
@@ -76,7 +78,9 @@ class ClientController extends Controller
             'name' => 'required|string|max:255',
             'code' => 'nullable|string|max:50',
             'address' => 'nullable|string|max:255',
+            'contact_name' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:50',
+            'email' => 'nullable|email|max:255',
             'is_active' => 'boolean',
         ]);
 
@@ -91,7 +95,9 @@ class ClientController extends Controller
             'name' => 'required|string|max:255',
             'code' => 'nullable|string|max:50',
             'address' => 'nullable|string|max:255',
+            'contact_name' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:50',
+            'email' => 'nullable|email|max:255',
             'is_active' => 'boolean',
         ]);
 
