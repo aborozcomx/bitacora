@@ -160,26 +160,31 @@ const handleFilter = () => {
     }, { preserveState: true, replace: true });
 };
 
-// Weekly period calculation (Wednesday to following Thursday)
+// Format Date to YYYY-MM-DD using local time
+const formatLocalDate = (d: Date): string => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+// Weekly period calculation (Thursday to following Wednesday - 7 days)
 const getWeeklyPeriods = () => {
     const periods = [];
     const today = new Date();
     const currentDay = today.getDay(); // 0: Sun, 1: Mon, 2: Tue, 3: Wed, 4: Thu, 5: Fri, 6: Sat
-    const diffToWed = (currentDay < 3 ? currentDay + 7 : currentDay) - 3;
+    const diffToThu = (currentDay < 4 ? currentDay + 7 : currentDay) - 4;
     
-    const baseWed = new Date(today);
-    baseWed.setDate(today.getDate() - diffToWed);
+    const baseThu = new Date(today.getFullYear(), today.getMonth(), today.getDate() - diffToThu);
 
     for (let i = 2; i >= -8; i--) {
-        const wed = new Date(baseWed);
-        wed.setDate(baseWed.getDate() + (i * 7));
-        const thu = new Date(wed);
-        thu.setDate(wed.getDate() + 8);
+        const thu = new Date(baseThu.getFullYear(), baseThu.getMonth(), baseThu.getDate() + (i * 7));
+        const wed = new Date(thu.getFullYear(), thu.getMonth(), thu.getDate() + 6);
 
-        const startStr = wed.toISOString().substring(0, 10);
-        const endStr = thu.toISOString().substring(0, 10);
+        const startStr = formatLocalDate(thu);
+        const endStr = formatLocalDate(wed);
         
-        let label = `Semana: Mié ${startStr} al Jue ${endStr}`;
+        let label = `Semana: Jue ${startStr} al Mié ${endStr}`;
         if (i === 0) label += ' (Semana Actual)';
 
         periods.push({
@@ -212,22 +217,20 @@ const applyPreviousWeek = () => {
     const currentEnd = new Date(endDate.value + 'T00:00:00');
     currentEnd.setDate(currentEnd.getDate() - 7);
 
-    startDate.value = currentStart.toISOString().substring(0, 10);
-    endDate.value = currentEnd.toISOString().substring(0, 10);
+    startDate.value = formatLocalDate(currentStart);
+    endDate.value = formatLocalDate(currentEnd);
     handleFilter();
 };
 
 const applyCurrentWeek = () => {
     const today = new Date();
     const currentDay = today.getDay();
-    const diffToWed = (currentDay < 3 ? currentDay + 7 : currentDay) - 3;
-    const wed = new Date(today);
-    wed.setDate(today.getDate() - diffToWed);
-    const thu = new Date(wed);
-    thu.setDate(wed.getDate() + 8);
+    const diffToThu = (currentDay < 4 ? currentDay + 7 : currentDay) - 4;
+    const thu = new Date(today.getFullYear(), today.getMonth(), today.getDate() - diffToThu);
+    const wed = new Date(thu.getFullYear(), thu.getMonth(), thu.getDate() + 6);
 
-    startDate.value = wed.toISOString().substring(0, 10);
-    endDate.value = thu.toISOString().substring(0, 10);
+    startDate.value = formatLocalDate(thu);
+    endDate.value = formatLocalDate(wed);
     handleFilter();
 };
 
@@ -237,8 +240,8 @@ const applyNextWeek = () => {
     const currentEnd = new Date(endDate.value + 'T00:00:00');
     currentEnd.setDate(currentEnd.getDate() + 7);
 
-    startDate.value = currentStart.toISOString().substring(0, 10);
-    endDate.value = currentEnd.toISOString().substring(0, 10);
+    startDate.value = formatLocalDate(currentStart);
+    endDate.value = formatLocalDate(currentEnd);
     handleFilter();
 };
 
@@ -259,7 +262,7 @@ const printReport = () => {
                     Cálculo Automático de Salarios y Desglose de Bitácoras
                 </h1>
                 <p class="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-                    Cálculo semanal de salarios (ciclo <strong>Miércoles a Jueves</strong>) y desglose de bitácoras por empleado.
+                    Cálculo semanal de salarios (ciclo <strong>Jueves a Miércoles</strong>) y desglose de bitácoras por empleado.
                 </p>
             </div>
             <Button variant="outline" @click="printReport" class="rounded-xl w-full sm:w-auto">
@@ -272,7 +275,7 @@ const printReport = () => {
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-zinc-100 dark:border-zinc-800">
                 <div class="flex items-center gap-2 flex-wrap">
                     <span class="text-xs font-bold uppercase text-indigo-600 dark:text-indigo-400 tracking-wider flex items-center gap-1.5">
-                        <Calendar class="h-4 w-4" /> Período Semanal (Miércoles a Jueves):
+                        <Calendar class="h-4 w-4" /> Período Semanal (Jueves a Miércoles):
                     </span>
                     <span class="text-xs font-mono font-semibold text-zinc-800 dark:text-zinc-200 bg-indigo-50 dark:bg-indigo-950/40 px-2.5 py-1 rounded-md border border-indigo-200 dark:border-indigo-800">
                         {{ startDate }} al {{ endDate }}
@@ -284,7 +287,7 @@ const printReport = () => {
                         <ChevronLeft class="h-3.5 w-3.5 mr-1" /> Semana Anterior
                     </Button>
                     <Button variant="secondary" size="sm" @click="applyCurrentWeek" class="rounded-lg text-xs font-semibold flex-1 sm:flex-initial">
-                        Semana Actual (Mié - Jue)
+                        Semana Actual (Jue - Mié)
                     </Button>
                     <Button variant="outline" size="sm" @click="applyNextWeek" class="rounded-lg text-xs flex-1 sm:flex-initial">
                         Semana Siguiente <ChevronRight class="h-3.5 w-3.5 ml-1" />

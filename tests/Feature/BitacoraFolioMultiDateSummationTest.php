@@ -368,7 +368,7 @@ test('employee daily normal hours across different folios cannot exceed 8 hrs on
         ->toContain('9 hrs');
 });
 
-test('employee daily normal hours across different folios cannot exceed 6 hrs on saturday', function () {
+test('employee daily normal hours across different folios cannot exceed 5 hrs on saturday', function () {
     $admin = User::factory()->create();
     $admin->assignRole('admin');
 
@@ -408,7 +408,7 @@ test('employee daily normal hours across different folios cannot exceed 6 hrs on
     ]);
 
     // Folio 2: User tries to assign 3 normal hours on the same Saturday
-    // Total = 4 + 3 = 7 hrs (> 6 hrs max Saturday)
+    // Total = 4 + 3 = 7 hrs (> 5 hrs max Saturday)
     $b2 = Bitacora::create([
         'branch_id' => $branch->id,
         'user_id' => $admin->id,
@@ -437,7 +437,7 @@ test('employee daily normal hours across different folios cannot exceed 6 hrs on
     $response->assertSessionHasErrors('activities');
     $errors = session('errors')->get('activities');
     expect($errors[0])->toContain('Marcos Luna')
-        ->toContain('excede el límite de 6 horas normales')
+        ->toContain('excede el límite de 5 horas normales')
         ->toContain('sábado')
         ->toContain('SAT-01')
         ->toContain('4 hrs')

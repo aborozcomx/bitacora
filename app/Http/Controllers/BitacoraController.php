@@ -529,7 +529,7 @@ class BitacoraController extends Controller
 
             foreach ($hoursByEmpAndDate as $key => $data) {
                 $carbonDate = Carbon::parse($data['date']);
-                $maxHours = $carbonDate->isSaturday() ? 6.0 : 8.0;
+                $maxHours = $carbonDate->isSaturday() ? 5.0 : 8.0;
                 $dayLabel = $carbonDate->isSaturday() ? 'sábado' : ($carbonDate->isSunday() ? 'domingo' : 'entre semana');
 
                 $other = $otherHoursMap[$key] ?? ['hours' => 0.0, 'folios' => []];

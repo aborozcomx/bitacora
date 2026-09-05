@@ -6,6 +6,7 @@ use App\Models\Employee;
 use App\Models\User;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 
 uses(RefreshDatabase::class);
 
@@ -136,7 +137,7 @@ test('salary report accurately counts absences and filters employees with absenc
     );
 });
 
-test('salary report defaults to weekly Wednesday-Thursday range and provides bitacoras list for each employee', function () {
+test('salary report defaults to weekly Thursday-to-Wednesday range and provides bitacoras list for each employee', function () {
     $admin = User::factory()->create();
     $admin->assignRole('admin');
 
@@ -169,7 +170,7 @@ test('salary report defaults to weekly Wednesday-Thursday range and provides bit
         'total_earned' => 1100.00,
     ]);
 
-    // Test without params (defaults to Wednesday - Thursday weekly cycle)
+    // Test without params (defaults to Thursday - Wednesday weekly cycle)
     $response = $this->actingAs($admin)->get('/salaries');
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page
@@ -179,7 +180,13 @@ test('salary report defaults to weekly Wednesday-Thursday range and provides bit
         ->has('payrollSummary.0.bitacoras')
     );
 
-    // Test with explicit Wednesday - Thursday range
+    $start = Carbon::parse($response->inertiaPage()['props']['filters']['start_date']);
+    $end = Carbon::parse($response->inertiaPage()['props']['filters']['end_date']);
+    expect($start->isThursday())->toBeTrue();
+    expect($end->isWednesday())->toBeTrue();
+    expect($start->diffInDays($end))->toEqual(6);
+
+    // Test with explicit date range
     $explicitResponse = $this->actingAs($admin)->get('/salaries?start_date=2026-08-12&end_date=2026-08-20');
     $explicitResponse->assertStatus(200);
     $explicitResponse->assertInertia(fn ($page) => $page

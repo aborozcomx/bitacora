@@ -177,7 +177,7 @@ const isSaturdayDate = (dateStr: string): boolean => {
 };
 
 const getMaxHoursForDate = (dateStr: string): number => {
-    return isSaturdayDate(dateStr) ? 6 : 8;
+    return isSaturdayDate(dateStr) ? 5 : 8;
 };
 
 // Activity methods
@@ -210,7 +210,7 @@ const addEmployeeToActivity = (actIndex: number) => {
         is_absent: false,
         is_partial_shift: false,
         partial_shift_reason: '',
-        hours_worked: 8,
+        hours_worked: getMaxHoursForDate(act.date),
         overtime_hours: 0,
     });
 };
@@ -520,7 +520,7 @@ const submit = () => {
                                     </Badge>
                                 </h3>
                                 <span class="text-[11px] text-zinc-500">
-                                    {{ isSaturdayDate(act.date) ? 'Día Sábado (Máx 6h normales)' : (isSundayDate(act.date) ? 'Día Domingo' : 'Entre Semana (Máx 8h normales)') }}
+                                    {{ isSaturdayDate(act.date) ? 'Día Sábado (Máx 5h normales)' : (isSundayDate(act.date) ? 'Día Domingo' : 'Entre Semana (Máx 8h normales)') }}
                                 </span>
                             </div>
                         </div>

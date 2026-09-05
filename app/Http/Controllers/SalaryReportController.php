@@ -17,15 +17,15 @@ class SalaryReportController extends Controller
     {
         $user = $request->user();
 
-        // Default to current weekly cycle: Wednesday to following Thursday
+        // Default to current weekly cycle: Thursday to following Wednesday (7 days)
         if (! $request->filled('start_date') || ! $request->filled('end_date')) {
             $now = now();
-            if ($now->dayOfWeek < Carbon::WEDNESDAY) {
-                $start = $now->copy()->previous(Carbon::WEDNESDAY);
+            if ($now->dayOfWeek < Carbon::THURSDAY) {
+                $start = $now->copy()->previous(Carbon::THURSDAY);
             } else {
-                $start = $now->copy()->startOfDay()->subDays($now->dayOfWeek - Carbon::WEDNESDAY);
+                $start = $now->copy()->startOfDay()->subDays($now->dayOfWeek - Carbon::THURSDAY);
             }
-            $end = $start->copy()->addDays(8); // Wednesday to following week Thursday
+            $end = $start->copy()->addDays(6); // Thursday to Wednesday (7 days inclusive)
 
             $startDate = $request->input('start_date', $start->toDateString());
             $endDate = $request->input('end_date', $end->toDateString());

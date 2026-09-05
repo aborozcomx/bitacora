@@ -212,7 +212,7 @@ test('encargado can update bitacora of their branch to add activities, employees
     ]);
 });
 
-test('individual employee normal hours cannot exceed 8 hrs on weekday or 6 hrs on saturday', function () {
+test('individual employee normal hours cannot exceed 8 hrs on weekday or 5 hrs on saturday', function () {
     $branch = Branch::create(['name' => 'Sucursal Test', 'code' => 'SUC-TST', 'is_active' => true]);
     $client = Client::create(['name' => 'Cliente Test', 'code' => 'CLI-01', 'is_active' => true]);
 
@@ -238,7 +238,7 @@ test('individual employee normal hours cannot exceed 8 hrs on weekday or 6 hrs o
         'date' => '2026-08-15',
     ]);
 
-    // 2026-08-15 is Saturday (max 6 hrs per employee): 7 hrs for Ana must fail validation
+    // 2026-08-15 is Saturday (max 5 hrs per employee): 7 hrs for Ana must fail validation
     $response = $this->actingAs($manager)->put("/bitacoras/{$bitacora->id}", [
         'activities' => [
             [

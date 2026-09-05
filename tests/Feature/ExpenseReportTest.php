@@ -8,6 +8,7 @@ use App\Models\PaymentMethod;
 use App\Models\User;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 
 uses(RefreshDatabase::class);
 
@@ -15,7 +16,7 @@ beforeEach(function () {
     $this->seed(RoleAndPermissionSeeder::class);
 });
 
-test('expense report defaults to Wednesday-to-Thursday weekly range', function () {
+test('expense report defaults to Thursday-to-Wednesday weekly range', function () {
     $admin = User::factory()->create();
     $admin->assignRole('admin');
 
@@ -31,6 +32,12 @@ test('expense report defaults to Wednesday-to-Thursday weekly range', function (
         ->has('paymentMethods')
         ->has('paymentCards')
     );
+
+    $start = Carbon::parse($response->inertiaPage()['props']['filters']['start_date']);
+    $end = Carbon::parse($response->inertiaPage()['props']['filters']['end_date']);
+    expect($start->isThursday())->toBeTrue();
+    expect($end->isWednesday())->toBeTrue();
+    expect($start->diffInDays($end))->toEqual(6);
 });
 
 test('expense report filters by payment method and payment card correctly', function () {
