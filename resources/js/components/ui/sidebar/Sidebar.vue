@@ -18,6 +18,20 @@ const props = withDefaults(defineProps<SidebarProps>(), {
 })
 
 const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+
+const handleMobileContentClick = (event: MouseEvent) => {
+  if (!isMobile.value) return;
+  const target = event.target as HTMLElement | null;
+  // Don't close if clicking a dropdown trigger opening a menu
+  if (target?.closest('[aria-haspopup="menu"]')) {
+    return;
+  }
+  // If clicked on any link, button, menu item, or interactive element
+  const clickable = target?.closest('a, button, [data-sidebar="menu-button"], [role="button"], [role="menuitem"]');
+  if (clickable) {
+    setOpenMobile(false);
+  }
+}
 </script>
 
 <template>
@@ -45,7 +59,7 @@ const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
         <SheetTitle>Sidebar</SheetTitle>
         <SheetDescription>Displays the mobile sidebar.</SheetDescription>
       </SheetHeader>
-      <div class="flex h-full w-full flex-col">
+      <div class="flex h-full w-full flex-col" @click="handleMobileContentClick">
         <slot />
       </div>
     </SheetContent>
