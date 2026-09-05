@@ -233,27 +233,27 @@ const printReport = () => {
 <template>
     <Head title="Reporte de Gastos" />
 
-    <div class="p-6 space-y-6 max-w-7xl mx-auto print:p-0 print:max-w-none">
+    <div class="p-3 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full min-w-0 print:p-0 print:max-w-none">
         <!-- Header -->
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm print:hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white dark:bg-zinc-900 p-4 sm:p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm print:hidden">
             <div>
-                <h1 class="text-2xl font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                <h1 class="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                     <Receipt class="h-6 w-6 text-amber-600 dark:text-amber-400" />
                     Reporte Semanal de Gastos por Método y Tarjeta
                 </h1>
-                <p class="text-sm text-zinc-500 dark:text-zinc-400">
+                <p class="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1">
                     Consolidado semanal de egresos (ciclo <strong>Miércoles a Jueves</strong>) desglosados por transferencia, efectivo y tarjeta registrada.
                 </p>
             </div>
-            <Button variant="outline" @click="printReport" class="rounded-xl">
+            <Button variant="outline" @click="printReport" class="rounded-xl w-full sm:w-auto">
                 <FileSpreadsheet class="h-4 w-4 mr-2" /> Imprimir Reporte
             </Button>
         </div>
 
         <!-- Weekly Filter Quick Controls -->
-        <div class="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-3 print:hidden">
+        <div class="bg-white dark:bg-zinc-900 p-3 sm:p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-3 print:hidden">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-zinc-100 dark:border-zinc-800">
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 flex-wrap">
                     <span class="text-xs font-bold uppercase text-amber-600 dark:text-amber-400 tracking-wider flex items-center gap-1.5">
                         <Calendar class="h-4 w-4" /> Período Semanal (Miércoles a Jueves):
                     </span>
@@ -262,14 +262,14 @@ const printReport = () => {
                     </span>
                 </div>
 
-                <div class="flex items-center gap-2">
-                    <Button variant="outline" size="sm" @click="applyPreviousWeek" class="rounded-lg text-xs">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <Button variant="outline" size="sm" @click="applyPreviousWeek" class="rounded-lg text-xs flex-1 sm:flex-initial">
                         <ChevronLeft class="h-3.5 w-3.5 mr-1" /> Semana Anterior
                     </Button>
-                    <Button variant="secondary" size="sm" @click="applyCurrentWeek" class="rounded-lg text-xs font-semibold">
+                    <Button variant="secondary" size="sm" @click="applyCurrentWeek" class="rounded-lg text-xs font-semibold flex-1 sm:flex-initial">
                         Semana Actual (Mié - Jue)
                     </Button>
-                    <Button variant="outline" size="sm" @click="applyNextWeek" class="rounded-lg text-xs">
+                    <Button variant="outline" size="sm" @click="applyNextWeek" class="rounded-lg text-xs flex-1 sm:flex-initial">
                         Semana Siguiente <ChevronRight class="h-3.5 w-3.5 ml-1" />
                     </Button>
                 </div>
@@ -396,8 +396,8 @@ const printReport = () => {
         </div>
 
         <!-- EXPENSES TABLE -->
-        <div class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm">
-            <div class="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
+        <div class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm w-full min-w-0">
+            <div class="p-4 border-b border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row justify-between sm:items-center gap-2">
                 <h2 class="font-bold text-zinc-900 dark:text-zinc-100 text-base">
                     Listado Detallado de Gastos por Folio ({{ startDate }} al {{ endDate }})
                 </h2>
@@ -405,8 +405,8 @@ const printReport = () => {
                     Total: <strong class="font-mono text-amber-600">${{ grand_total.toFixed(2) }}</strong>
                 </span>
             </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm text-zinc-600 dark:text-zinc-300">
+            <div class="overflow-x-auto w-full">
+                <table class="w-full text-left text-xs sm:text-sm text-zinc-600 dark:text-zinc-300 min-w-[750px]">
                     <thead class="bg-zinc-50 dark:bg-zinc-800/60 text-xs font-semibold text-zinc-500 uppercase tracking-wider border-b border-zinc-200 dark:border-zinc-800">
                         <tr>
                             <th class="py-3 px-4">Folio / Fecha</th>

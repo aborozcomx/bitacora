@@ -92,9 +92,9 @@ const print = () => {
 <template>
     <Head :title="`Bitácora ${bitacora.folio_number}`" />
 
-    <div class="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-6 print:p-0 print:space-y-4">
+    <div class="p-3 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-6 w-full min-w-0 print:p-0 print:space-y-4">
         <!-- Actions Top Bar (Hidden on Print) -->
-        <div class="flex items-center justify-between print:hidden">
+        <div class="flex flex-wrap items-center justify-between gap-2 print:hidden">
             <Link href="/bitacoras">
                 <Button variant="outline" size="sm" class="rounded-xl">
                     <ArrowLeft class="h-4 w-4 mr-1.5" /> Volver al Listado
@@ -114,7 +114,7 @@ const print = () => {
         </div>
 
         <!-- Main Printable Sheet -->
-        <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-sm overflow-hidden p-6 sm:p-8 space-y-6 print:border-none print:shadow-none print:p-0">
+        <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-sm overflow-hidden p-4 sm:p-8 space-y-6 print:border-none print:shadow-none print:p-0 w-full min-w-0">
             <!-- Header Brand & Folio -->
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-zinc-200 dark:border-zinc-800 pb-6">
                 <div>
@@ -134,7 +134,7 @@ const print = () => {
             </div>
 
             <!-- Details Grid -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/80 dark:border-zinc-800 text-xs">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/80 dark:border-zinc-800 text-xs">
                 <div>
                     <span class="text-zinc-400 uppercase font-semibold text-[10px] block">Cliente</span>
                     <span class="font-bold text-zinc-900 dark:text-zinc-100 block">{{ bitacora.client?.name || 'Cliente General' }}</span>
@@ -210,68 +210,72 @@ const print = () => {
                         <!-- Employees Table -->
                         <div>
                             <span class="text-[11px] font-bold uppercase text-zinc-500 block mb-2">Personal Asignado</span>
-                            <table class="w-full text-xs text-left">
-                                <thead class="bg-zinc-100 dark:bg-zinc-800 text-zinc-500 uppercase text-[10px]">
-                                    <tr>
-                                        <th class="py-1.5 px-3">Empleado</th>
-                                        <th class="py-1.5 px-3 text-center">Estado</th>
-                                        <th class="py-1.5 px-3 text-center">Horas Normales</th>
-                                        <th class="py-1.5 px-3 text-center">Horas Extras</th>
-                                        <th class="py-1.5 px-3 text-right">Subtotal</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
-                                    <tr v-for="emp in act.employees" :key="emp.id">
-                                        <td class="py-2 px-3 font-medium text-zinc-900 dark:text-zinc-100">
-                                            {{ emp.employee?.first_name }} {{ emp.employee?.last_name }}
-                                            <span class="text-zinc-400 font-mono text-[10px]">[{{ emp.employee?.employee_code }}]</span>
-                                        </td>
-                                        <td class="py-2 px-3 text-center">
-                                            <Badge :variant="emp.is_absent ? 'destructive' : 'secondary'" class="text-[10px] py-0">
-                                                {{ emp.is_absent ? '⚠️ Falta' : '✅ Asistió' }}
-                                            </Badge>
-                                        </td>
-                                        <td class="py-2 px-3 text-center font-mono">{{ emp.is_absent ? '-' : `${emp.hours_worked} hrs` }}</td>
-                                        <td class="py-2 px-3 text-center font-mono">{{ emp.is_absent ? '-' : `${emp.overtime_hours} hrs` }}</td>
-                                        <td class="py-2 px-3 text-right font-mono font-bold">{{ formatCurrency(emp.total_earned) }}</td>
-                                    </tr>
-                                    <tr v-if="!act.employees || act.employees.length === 0">
-                                        <td colspan="5" class="py-2 text-center text-zinc-400 italic">No se asignó personal.</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                            <div class="overflow-x-auto w-full">
+                                <table class="w-full text-xs text-left min-w-[500px]">
+                                    <thead class="bg-zinc-100 dark:bg-zinc-800 text-zinc-500 uppercase text-[10px]">
+                                        <tr>
+                                            <th class="py-1.5 px-3">Empleado</th>
+                                            <th class="py-1.5 px-3 text-center">Estado</th>
+                                            <th class="py-1.5 px-3 text-center">Horas Normales</th>
+                                            <th class="py-1.5 px-3 text-center">Horas Extras</th>
+                                            <th class="py-1.5 px-3 text-right">Subtotal</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
+                                        <tr v-for="emp in act.employees" :key="emp.id">
+                                            <td class="py-2 px-3 font-medium text-zinc-900 dark:text-zinc-100">
+                                                {{ emp.employee?.first_name }} {{ emp.employee?.last_name }}
+                                                <span class="text-zinc-400 font-mono text-[10px]">[{{ emp.employee?.employee_code }}]</span>
+                                            </td>
+                                            <td class="py-2 px-3 text-center">
+                                                <Badge :variant="emp.is_absent ? 'destructive' : 'secondary'" class="text-[10px] py-0">
+                                                    {{ emp.is_absent ? '⚠️ Falta' : '✅ Asistió' }}
+                                                </Badge>
+                                            </td>
+                                            <td class="py-2 px-3 text-center font-mono">{{ emp.is_absent ? '-' : `${emp.hours_worked} hrs` }}</td>
+                                            <td class="py-2 px-3 text-center font-mono">{{ emp.is_absent ? '-' : `${emp.overtime_hours} hrs` }}</td>
+                                            <td class="py-2 px-3 text-right font-mono font-bold">{{ formatCurrency(emp.total_earned) }}</td>
+                                        </tr>
+                                        <tr v-if="!act.employees || act.employees.length === 0">
+                                            <td colspan="5" class="py-2 text-center text-zinc-400 italic">No se asignó personal.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
 
                         <!-- Expenses Table -->
                         <div v-if="act.expenses && act.expenses.length > 0" class="pt-2 border-t border-zinc-100 dark:border-zinc-800">
                             <span class="text-[11px] font-bold uppercase text-emerald-700 dark:text-emerald-400 block mb-2">Gastos de la Actividad</span>
-                            <table class="w-full text-xs text-left">
-                                <thead class="bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300 uppercase text-[10px]">
-                                    <tr>
-                                        <th class="py-1.5 px-3">Concepto</th>
-                                        <th class="py-1.5 px-3">Método de Pago</th>
-                                        <th class="py-1.5 px-3">Cuenta / Tarjeta</th>
-                                        <th class="py-1.5 px-3">Referencia</th>
-                                        <th class="py-1.5 px-3 text-right">Monto</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
-                                    <tr v-for="exp in act.expenses" :key="exp.id">
-                                        <td class="py-2 px-3 font-semibold text-zinc-900 dark:text-zinc-100">{{ exp.concept }}</td>
-                                        <td class="py-2 px-3">{{ exp.payment_method?.name || exp.paymentMethod?.name || '-' }}</td>
-                                        <td class="py-2 px-3">
-                                            <span v-if="exp.payment_card || exp.paymentCard">
-                                                {{ (exp.payment_card || exp.paymentCard)?.alias }} ({{ (exp.payment_card || exp.paymentCard)?.card_number_masked }})
-                                            </span>
-                                            <span v-else class="text-zinc-400">Efectivo / N/A</span>
-                                        </td>
-                                        <td class="py-2 px-3 font-mono text-zinc-500">{{ exp.reference_number || '-' }}</td>
-                                        <td class="py-2 px-3 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                                            {{ formatCurrency(exp.amount) }}
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                            <div class="overflow-x-auto w-full">
+                                <table class="w-full text-xs text-left min-w-[500px]">
+                                    <thead class="bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300 uppercase text-[10px]">
+                                        <tr>
+                                            <th class="py-1.5 px-3">Concepto</th>
+                                            <th class="py-1.5 px-3">Método de Pago</th>
+                                            <th class="py-1.5 px-3">Cuenta / Tarjeta</th>
+                                            <th class="py-1.5 px-3">Referencia</th>
+                                            <th class="py-1.5 px-3 text-right">Monto</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
+                                        <tr v-for="exp in act.expenses" :key="exp.id">
+                                            <td class="py-2 px-3 font-semibold text-zinc-900 dark:text-zinc-100">{{ exp.concept }}</td>
+                                            <td class="py-2 px-3">{{ exp.payment_method?.name || exp.paymentMethod?.name || '-' }}</td>
+                                            <td class="py-2 px-3">
+                                                <span v-if="exp.payment_card || exp.paymentCard">
+                                                    {{ (exp.payment_card || exp.paymentCard)?.alias }} ({{ (exp.payment_card || exp.paymentCard)?.card_number_masked }})
+                                                </span>
+                                                <span v-else class="text-zinc-400">Efectivo / N/A</span>
+                                            </td>
+                                            <td class="py-2 px-3 font-mono text-zinc-500">{{ exp.reference_number || '-' }}</td>
+                                            <td class="py-2 px-3 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                                                {{ formatCurrency(exp.amount) }}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>

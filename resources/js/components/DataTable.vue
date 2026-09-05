@@ -115,24 +115,24 @@ const goToPage = (page: number) => {
 </script>
 
 <template>
-    <div class="space-y-4">
+    <div class="space-y-4 w-full min-w-0">
         <!-- Controls Header: Search & Per-Page Selector -->
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800">
-            <div class="relative flex-1 max-w-md">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 bg-white dark:bg-zinc-900 p-3 sm:p-4 rounded-xl border border-zinc-200 dark:border-zinc-800">
+            <div class="relative flex-1 w-full sm:max-w-md">
                 <Search class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
                 <Input
                     v-model="searchQuery"
                     :placeholder="searchPlaceholder"
-                    class="pl-9 bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700"
+                    class="pl-9 bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700 w-full text-xs sm:text-sm"
                 />
             </div>
 
-            <div class="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400 self-end sm:self-auto">
+            <div class="flex items-center justify-between sm:justify-end gap-2 text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 w-full sm:w-auto">
                 <span>Mostrar</span>
                 <select
                     v-model="perPage"
                     @change="currentPage = 1"
-                    class="h-9 rounded-md border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 px-2 text-sm font-semibold text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    class="h-8 sm:h-9 rounded-md border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 px-2 text-xs sm:text-sm font-semibold text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
                     <option :value="5">5</option>
                     <option :value="10">10</option>
@@ -145,9 +145,9 @@ const goToPage = (page: number) => {
         </div>
 
         <!-- DataTable Container -->
-        <div class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm text-zinc-600 dark:text-zinc-300">
+        <div class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm w-full min-w-0">
+            <div class="overflow-x-auto w-full">
+                <table class="w-full text-left text-xs sm:text-sm text-zinc-600 dark:text-zinc-300 min-w-[550px]">
                     <thead class="bg-zinc-50 dark:bg-zinc-800/60 text-xs font-semibold text-zinc-500 uppercase tracking-wider border-b border-zinc-200 dark:border-zinc-800">
                         <tr>
                             <th
@@ -201,14 +201,14 @@ const goToPage = (page: number) => {
             </div>
 
             <!-- Footer Pagination Controls -->
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 bg-zinc-50/60 dark:bg-zinc-800/40 border-t border-zinc-200 dark:border-zinc-800 text-sm text-zinc-600 dark:text-zinc-400">
-                <div>
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 sm:p-4 bg-zinc-50/60 dark:bg-zinc-800/40 border-t border-zinc-200 dark:border-zinc-800 text-xs sm:text-sm text-zinc-600 dark:text-zinc-400">
+                <div class="text-center sm:text-left">
                     Mostrando <span class="font-semibold text-zinc-900 dark:text-zinc-100">{{ startItem }}</span> a
                     <span class="font-semibold text-zinc-900 dark:text-zinc-100">{{ endItem }}</span> de
                     <span class="font-semibold text-zinc-900 dark:text-zinc-100">{{ sortedData.length }}</span> registros
                 </div>
 
-                <div class="flex items-center gap-1">
+                <div class="flex items-center justify-center sm:justify-end gap-1 flex-wrap">
                     <Button
                         variant="outline"
                         size="icon"

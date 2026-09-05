@@ -132,15 +132,15 @@ const formatCurrency = (val: number) => {
 <template>
     <Head title="Bitácoras" />
 
-    <div class="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+    <div class="p-3 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto w-full min-w-0">
         <!-- Header -->
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white dark:bg-zinc-900 p-4 sm:p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
             <div>
-                <h1 class="text-2xl font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                <h1 class="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                     <ClipboardList class="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
                     Bitácoras Operativas
                 </h1>
-                <p class="text-sm text-zinc-500 dark:text-zinc-400">
+                <p class="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1">
                     Control de folios, clientes, actividades de mantenimiento, personal y gastos operativos.
                 </p>
             </div>
@@ -192,10 +192,86 @@ const formatCurrency = (val: number) => {
             </div>
         </div>
 
-        <!-- Bitacoras Table -->
-        <div class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs text-zinc-600 dark:text-zinc-300">
+        <!-- Bitacoras Container -->
+        <div class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm w-full min-w-0">
+            <!-- Mobile View: Card List (md:hidden) -->
+            <div class="block md:hidden divide-y divide-zinc-200 dark:divide-zinc-800">
+                <div
+                    v-for="b in bitacoras.data"
+                    :key="b.id"
+                    class="p-4 space-y-3 transition"
+                    :class="hasSundayActivity(b)
+                        ? 'bg-amber-50/60 dark:bg-amber-950/20'
+                        : 'hover:bg-zinc-50/50 dark:hover:bg-zinc-800/40'"
+                >
+                    <!-- Top Row: Folio + Date & Sunday badge + Actions -->
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <Link :href="`/bitacoras/${b.id}`" class="text-base font-mono font-bold text-indigo-600 dark:text-indigo-400 hover:underline">
+                                {{ b.folio_number }}
+                            </Link>
+                            <div class="flex items-center gap-1.5 font-mono text-xs text-zinc-500 mt-0.5">
+                                <Calendar class="h-3.5 w-3.5 text-zinc-400" />
+                                <span>{{ b.date }}</span>
+                                <Badge v-if="hasSundayActivity(b)" class="bg-amber-500 text-white text-[10px] py-0 px-1.5 gap-0.5">
+                                    <Sun class="h-3 w-3" /> Domingo
+                                </Badge>
+                            </div>
+                        </div>
+                        <ActionsDropdown
+                            :actions="[
+                                { label: 'Ver Detalle', icon: 'view', onClick: () => router.get(`/bitacoras/${b.id}`) },
+                                { label: 'Editar Actividades', icon: 'edit', onClick: () => router.get(`/bitacoras/${b.id}/edit`) },
+                                { label: 'Eliminar', icon: 'delete', variant: 'destructive', onClick: () => openDeleteConfirm(b) }
+                            ]"
+                        />
+                    </div>
+
+                    <!-- Client & Branch Details -->
+                    <div class="text-xs space-y-1 bg-zinc-50 dark:bg-zinc-800/50 p-2.5 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                        <div class="flex items-center justify-between">
+                            <span class="text-zinc-500 font-medium">Cliente:</span>
+                            <span class="font-semibold text-zinc-900 dark:text-zinc-100 text-right">{{ b.client?.name || 'Cliente General' }}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-zinc-500 font-medium">Sucursal Cliente:</span>
+                            <span class="text-zinc-700 dark:text-zinc-300 text-right">{{ b.client_branch?.name || b.clientBranch?.name || 'Matriz / General' }}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-zinc-500 font-medium">Sucursal ICC:</span>
+                            <span class="text-zinc-700 dark:text-zinc-300 text-right">{{ b.branch?.name }}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-zinc-500 font-medium">Encargado:</span>
+                            <span class="text-zinc-700 dark:text-zinc-300 text-right">{{ b.user?.name || 'Sistema' }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Totals Row -->
+                    <div class="grid grid-cols-3 gap-2 pt-1 text-center text-xs">
+                        <div class="bg-zinc-50 dark:bg-zinc-800/40 p-2 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                            <span class="text-[10px] text-zinc-400 uppercase font-semibold block">Actividades</span>
+                            <span class="font-mono font-bold text-zinc-800 dark:text-zinc-200">{{ b.activities?.length || 0 }}</span>
+                        </div>
+                        <div class="bg-zinc-50 dark:bg-zinc-800/40 p-2 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                            <span class="text-[10px] text-zinc-400 uppercase font-semibold block">Nómina</span>
+                            <span class="font-mono font-bold text-zinc-900 dark:text-zinc-100">{{ formatCurrency(calculateBitacoraPayroll(b)) }}</span>
+                        </div>
+                        <div class="bg-zinc-50 dark:bg-zinc-800/40 p-2 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                            <span class="text-[10px] text-zinc-400 uppercase font-semibold block">Gastos</span>
+                            <span class="font-mono font-bold text-emerald-600 dark:text-emerald-400">{{ formatCurrency(calculateBitacoraExpenses(b)) }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="bitacoras.data.length === 0" class="py-12 text-center text-zinc-400 italic text-xs">
+                    No se encontraron bitácoras para los filtros seleccionados.
+                </div>
+            </div>
+
+            <!-- Desktop View: Table (hidden on mobile, visible on md+) -->
+            <div class="hidden md:block overflow-x-auto w-full">
+                <table class="w-full text-left text-xs text-zinc-600 dark:text-zinc-300 min-w-[750px]">
                     <thead class="bg-zinc-50 dark:bg-zinc-800/60 text-[11px] font-semibold text-zinc-500 uppercase tracking-wider border-b border-zinc-200 dark:border-zinc-800">
                         <tr>
                             <th class="py-3 px-4">Folio</th>

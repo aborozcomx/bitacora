@@ -325,22 +325,22 @@ const submit = () => {
 <template>
     <Head :title="`Editar Bitácora ${bitacora.folio_number}`" />
 
-    <div class="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto space-y-6">
+    <div class="p-3 sm:p-6 lg:p-8 max-w-6xl mx-auto space-y-6 w-full min-w-0">
         <!-- Header -->
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white dark:bg-zinc-900 p-4 sm:p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
             <div class="flex items-center gap-3">
                 <Link href="/bitacoras">
-                    <Button variant="outline" size="icon" class="h-10 w-10 rounded-xl">
+                    <Button variant="outline" size="icon" class="h-10 w-10 rounded-xl shrink-0">
                         <ArrowLeft class="h-5 w-5" />
                     </Button>
                 </Link>
                 <div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 flex-wrap">
                         <h1 class="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                            <ClipboardList class="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+                            <ClipboardList class="h-5 w-5 sm:h-6 sm:w-6 text-indigo-600 dark:text-indigo-400" />
                             Bitácora {{ bitacora.folio_number }}
                         </h1>
-                        <Badge class="bg-indigo-100 text-indigo-800 dark:bg-indigo-950/80 dark:text-indigo-300 font-mono">
+                        <Badge class="bg-indigo-100 text-indigo-800 dark:bg-indigo-950/80 dark:text-indigo-300 font-mono text-xs">
                             {{ bitacora.branch?.name }}
                         </Badge>
                     </div>
@@ -351,8 +351,8 @@ const submit = () => {
             </div>
 
             <!-- Financial Summary Header Pills -->
-            <div class="flex items-center gap-2 self-end sm:self-auto">
-                <div class="bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 px-3 py-1.5 rounded-xl text-right">
+            <div class="flex items-center gap-2 self-start sm:self-auto">
+                <div class="bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 px-3 py-1.5 rounded-xl text-left sm:text-right">
                     <span class="text-[10px] font-bold uppercase text-emerald-700 dark:text-emerald-400 block">Total Bitácora</span>
                     <span class="text-base font-extrabold text-emerald-600 dark:text-emerald-300 font-mono">{{ formatCurrency(grandTotal) }}</span>
                 </div>
@@ -506,8 +506,8 @@ const submit = () => {
                             </div>
 
                             <!-- Employees Table -->
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-xs text-left">
+                            <div class="overflow-x-auto w-full">
+                                <table class="w-full text-xs text-left min-w-[550px]">
                                     <thead class="text-[11px] uppercase bg-zinc-200/60 dark:bg-zinc-800 text-zinc-600 font-semibold">
                                         <tr>
                                             <th class="py-2 px-3">Empleado</th>
@@ -620,8 +620,8 @@ const submit = () => {
                             </div>
 
                             <!-- Expenses Table -->
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-xs text-left">
+                            <div class="overflow-x-auto w-full">
+                                <table class="w-full text-xs text-left min-w-[550px]">
                                     <thead class="text-[11px] uppercase bg-zinc-200/60 dark:bg-zinc-800 text-zinc-600 font-semibold">
                                         <tr>
                                             <th class="py-2 px-3">Concepto</th>

@@ -144,28 +144,28 @@ const submit = () => {
 <template>
     <Head title="Nueva Bitácora" />
 
-    <div class="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-6">
+    <div class="p-3 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-6 w-full min-w-0">
         <!-- Header -->
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white dark:bg-zinc-900 p-4 sm:p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
             <div class="flex items-center gap-3">
                 <Link href="/bitacoras">
-                    <Button variant="outline" size="icon" class="h-10 w-10 rounded-xl">
+                    <Button variant="outline" size="icon" class="h-10 w-10 rounded-xl shrink-0">
                         <ArrowLeft class="h-5 w-5" />
                     </Button>
                 </Link>
                 <div>
                     <h1 class="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                        <ClipboardList class="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+                        <ClipboardList class="h-5 w-5 sm:h-6 sm:w-6 text-indigo-600 dark:text-indigo-400" />
                         Crear Nueva Bitácora
                     </h1>
-                    <p class="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400">
+                    <p class="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">
                         Alta de bitácora general asignada a un cliente, sucursal y usuario encargado.
                     </p>
                 </div>
             </div>
-            <div class="text-right">
+            <div class="text-left sm:text-right bg-zinc-50 dark:bg-zinc-800/40 p-2.5 sm:p-0 rounded-xl sm:bg-transparent">
                 <span class="text-xs font-semibold text-zinc-400 uppercase tracking-wider block">Vista previa de folio</span>
-                <span class="text-lg font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                <span class="text-base sm:text-lg font-mono font-bold text-indigo-600 dark:text-indigo-400">
                     {{ previewFolioNumber }}
                 </span>
             </div>
