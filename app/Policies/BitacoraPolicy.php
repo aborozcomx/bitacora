@@ -12,7 +12,7 @@ class BitacoraPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasRole('admin') || $user->can('manage-bitacoras');
+        return true;
     }
 
     /**
@@ -28,11 +28,11 @@ class BitacoraPolicy
     }
 
     /**
-     * Determine whether the user can create bitacoras (Only Admins).
+     * Determine whether the user can create bitacoras (Any user).
      */
     public function create(User $user): bool
     {
-        return $user->hasRole('admin');
+        return true;
     }
 
     /**
@@ -44,7 +44,7 @@ class BitacoraPolicy
             return true;
         }
 
-        return $user->can('manage-bitacoras') && ($user->branches->contains($bitacora->branch_id) || $bitacora->user_id === $user->id);
+        return $user->branches->contains($bitacora->branch_id) || $bitacora->user_id === $user->id;
     }
 
     /**

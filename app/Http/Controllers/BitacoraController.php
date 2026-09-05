@@ -71,7 +71,9 @@ class BitacoraController extends Controller
 
         $branches = $user->hasRole('admin')
             ? Branch::where('is_active', true)->get()
-            : $user->branches;
+            : ($user->branches()->where('is_active', true)->exists()
+                ? $user->branches()->where('is_active', true)->get()
+                : Branch::where('is_active', true)->get());
 
         $clients = Client::where('is_active', true)->get(['id', 'name', 'code']);
 
@@ -80,7 +82,7 @@ class BitacoraController extends Controller
             'branches' => $branches,
             'clients' => $clients,
             'filters' => $request->only(['search', 'branch_id', 'client_id', 'start_date', 'end_date']),
-            'canCreate' => $user->hasRole('admin'),
+            'canCreate' => $user->can('create', Bitacora::class),
         ]);
     }
 
@@ -88,6 +90,7 @@ class BitacoraController extends Controller
     {
         Gate::authorize('create', Bitacora::class);
 
+        $user = $request->user();
         $branches = Branch::where('is_active', true)->get();
         $users = User::query()
             ->orderBy('name')
@@ -126,6 +129,8 @@ class BitacoraController extends Controller
             'suggestedConsecutive' => $suggestedConsecutive,
             'existingBitacoraFolios' => $existingBitacoraFolios,
             'existingBitacoras' => $existingBitacoras,
+            'currentUserId' => $user?->id,
+            'defaultBranchId' => $user?->branches?->first()?->id ?? ($branches->first()?->id ?? null),
         ]);
     }
 
@@ -233,7 +238,9 @@ class BitacoraController extends Controller
 
         $branches = $user->hasRole('admin')
             ? Branch::where('is_active', true)->get()
-            : $user->branches()->where('is_active', true)->get();
+            : ($user->branches()->where('is_active', true)->exists()
+                ? $user->branches()->where('is_active', true)->get()
+                : Branch::where('is_active', true)->get());
 
         $users = User::query()
             ->orderBy('name')

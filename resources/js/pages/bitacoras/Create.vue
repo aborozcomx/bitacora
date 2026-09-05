@@ -75,6 +75,8 @@ const props = defineProps<{
     suggestedConsecutive: string;
     existingBitacoraFolios?: ExistingBitacoraFolio[];
     existingBitacoras?: ExistingBitacoraRecord[];
+    currentUserId?: number;
+    defaultBranchId?: number;
 }>();
 
 const clientSearch = ref('');
@@ -94,8 +96,8 @@ const folioOptions = computed(() => {
 });
 
 const form = useForm({
-    branch_id: props.branches.length > 0 ? props.branches[0].id : '',
-    user_id: props.users.length > 0 ? props.users[0].id : '',
+    branch_id: props.defaultBranchId || (props.branches.length > 0 ? props.branches[0].id : ''),
+    user_id: props.currentUserId || (props.users.length > 0 ? props.users[0].id : ''),
     client_id: '',
     client_branch_id: '',
     folio_prefix: props.suggestedPrefix || 'BIT',

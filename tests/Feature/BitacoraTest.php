@@ -26,7 +26,7 @@ test('admin can view bitacoras index', function () {
     $response->assertStatus(200);
 });
 
-test('only admin can create bitacora header with client and client branch', function () {
+test('admin can create bitacora header with client and client branch', function () {
     $admin = User::factory()->create();
     $admin->assignRole('admin');
 
@@ -73,7 +73,7 @@ test('only admin can create bitacora header with client and client branch', func
     ]);
 });
 
-test('encargado cannot create bitacora directly', function () {
+test('encargado or any user can create bitacora directly', function () {
     $manager = User::factory()->create();
     $manager->assignRole('encargado');
 
@@ -89,7 +89,38 @@ test('encargado cannot create bitacora directly', function () {
         'date' => '2026-08-26',
     ]);
 
-    $response->assertForbidden();
+    $bitacora = Bitacora::where('folio_number', 'BIT-002')->first();
+    expect($bitacora)->not->toBeNull();
+
+    $response->assertRedirect("/bitacoras/{$bitacora->id}/edit");
+
+    $this->assertDatabaseHas('bitacoras', [
+        'folio_number' => 'BIT-002',
+        'user_id' => $manager->id,
+    ]);
+});
+
+test('regular user without special roles can access bitacora create and store bitacora', function () {
+    $user = User::factory()->create();
+
+    $branch = Branch::create(['name' => 'Sucursal Sur', 'code' => 'SUC-SUR', 'is_active' => true]);
+    $client = Client::create(['name' => 'Cliente Regular', 'code' => 'CLI-REG', 'is_active' => true]);
+
+    $createPageResponse = $this->actingAs($user)->get('/bitacoras/create');
+    $createPageResponse->assertStatus(200);
+
+    $storeResponse = $this->actingAs($user)->post('/bitacoras', [
+        'branch_id' => $branch->id,
+        'user_id' => $user->id,
+        'client_id' => $client->id,
+        'folio_prefix' => 'BIT',
+        'folio_consecutive' => '003',
+        'date' => '2026-08-26',
+    ]);
+
+    $bitacora = Bitacora::where('folio_number', 'BIT-003')->first();
+    expect($bitacora)->not->toBeNull();
+    $storeResponse->assertRedirect("/bitacoras/{$bitacora->id}/edit");
 });
 
 test('encargado can update bitacora of their branch to add activities, employees and expenses', function () {
