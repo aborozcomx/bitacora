@@ -107,6 +107,15 @@ class BitacoraController extends Controller
             ->orderBy('folio_consecutive')
             ->get();
 
+        $existingBitacoras = Bitacora::select('folio_prefix', 'folio_consecutive', 'folio_number', 'date')
+            ->get()
+            ->map(fn ($b) => [
+                'folio_prefix' => $b->folio_prefix,
+                'folio_consecutive' => (string) $b->folio_consecutive,
+                'folio_number' => $b->folio_number,
+                'date' => is_string($b->date) ? substr($b->date, 0, 10) : $b->date->format('Y-m-d'),
+            ]);
+
         return Inertia::render('bitacoras/Create', [
             'branches' => $branches,
             'users' => $users,
@@ -115,6 +124,7 @@ class BitacoraController extends Controller
             'suggestedPrefix' => $suggestedPrefix,
             'suggestedConsecutive' => $suggestedConsecutive,
             'existingBitacoraFolios' => $existingBitacoraFolios,
+            'existingBitacoras' => $existingBitacoras,
         ]);
     }
 
@@ -122,15 +132,25 @@ class BitacoraController extends Controller
     {
         Gate::authorize('create', Bitacora::class);
 
+        if ($request->has('folio_consecutive')) {
+            $request->merge([
+                'folio_consecutive' => (string) $request->input('folio_consecutive'),
+            ]);
+        }
+
         $validated = $request->validate([
             'branch_id' => 'required|exists:branches,id',
             'user_id' => 'required|exists:users,id',
             'client_id' => 'required|exists:clients,id',
             'client_branch_id' => 'nullable|exists:client_branches,id',
             'folio_prefix' => 'required|string|max:20',
-            'folio_consecutive' => 'required|string|max:50',
+            'folio_consecutive' => 'required|max:50',
             'date' => 'required|date',
             'notes' => 'nullable|string',
+        ], [
+            'folio_prefix.required' => 'La serie de folio es obligatoria.',
+            'folio_consecutive.required' => 'El número consecutivo es obligatorio.',
+            'date.required' => 'La fecha es obligatoria.',
         ]);
 
         $prefix = trim($validated['folio_prefix']);
@@ -327,13 +347,19 @@ class BitacoraController extends Controller
      */
     private function validateBitacoraHierarchyData(Request $request, Bitacora $bitacora): array
     {
+        if ($request->has('folio_consecutive')) {
+            $request->merge([
+                'folio_consecutive' => (string) $request->input('folio_consecutive'),
+            ]);
+        }
+
         $validated = $request->validate([
             'branch_id' => 'sometimes|required|exists:branches,id',
             'user_id' => 'sometimes|required|exists:users,id',
             'client_id' => 'sometimes|required|exists:clients,id',
             'client_branch_id' => 'nullable|exists:client_branches,id',
             'folio_prefix' => 'nullable|string|max:20',
-            'folio_consecutive' => 'nullable|string|max:50',
+            'folio_consecutive' => 'nullable|max:50',
             'folio_number' => 'nullable|string|max:100',
             'date' => 'nullable|date',
             'notes' => 'nullable|string',

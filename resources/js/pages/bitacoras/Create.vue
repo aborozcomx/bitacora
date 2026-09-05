@@ -16,7 +16,9 @@ import {
     FileText,
     Search,
     Info,
-    Hash
+    Hash,
+    AlertTriangle,
+    CheckCircle2
 } from '@lucide/vue';
 
 interface Branch {
@@ -57,6 +59,13 @@ interface ExistingBitacoraFolio {
     folio_number: string;
 }
 
+interface ExistingBitacoraRecord {
+    folio_prefix: string;
+    folio_consecutive: string;
+    folio_number: string;
+    date: string;
+}
+
 const props = defineProps<{
     branches: Branch[];
     users: User[];
@@ -65,6 +74,7 @@ const props = defineProps<{
     suggestedPrefix: string;
     suggestedConsecutive: string;
     existingBitacoraFolios?: ExistingBitacoraFolio[];
+    existingBitacoras?: ExistingBitacoraRecord[];
 }>();
 
 const clientSearch = ref('');
@@ -146,6 +156,29 @@ const existingFoliosForPrefix = computed(() => {
 const selectExistingFolio = (consecutive: string) => {
     form.folio_consecutive = consecutive;
 };
+
+// Check if current folio prefix + consecutive already exists on the selected date
+const isDuplicateOnSameDate = computed(() => {
+    if (!form.folio_prefix || !form.folio_consecutive || !form.date) return false;
+    const p = form.folio_prefix.trim().toUpperCase();
+    const c = String(form.folio_consecutive).trim();
+    const full = `${p}-${c}`;
+    const d = form.date;
+    return (props.existingBitacoras || []).some(
+        b => b.folio_number.toUpperCase() === full && b.date.substring(0, 10) === d
+    );
+});
+
+// Check if current folio prefix + consecutive exists on other dates
+const previousDatesForFolio = computed(() => {
+    if (!form.folio_prefix || !form.folio_consecutive) return [];
+    const p = form.folio_prefix.trim().toUpperCase();
+    const c = String(form.folio_consecutive).trim();
+    const full = `${p}-${c}`;
+    return (props.existingBitacoras || [])
+        .filter(b => b.folio_number.toUpperCase() === full)
+        .map(b => b.date.substring(0, 10));
+});
 
 // Computed full folio number preview
 const previewFolioNumber = computed(() => {
@@ -387,6 +420,34 @@ const submit = () => {
                         </div>
                     </div>
 
+                    <!-- Validation Alert: Duplicate Folio on Same Date -->
+                    <div
+                        v-if="isDuplicateOnSameDate"
+                        class="p-3.5 bg-red-50 dark:bg-red-950/40 rounded-xl border border-red-200 dark:border-red-800 text-xs text-red-800 dark:text-red-200 space-y-1"
+                    >
+                        <div class="font-bold flex items-center gap-1.5 text-red-700 dark:text-red-300">
+                            <AlertTriangle class="h-4 w-4 shrink-0 text-red-600" />
+                            Folio ya registrado en esta fecha
+                        </div>
+                        <p>
+                            La bitácora con el folio <strong>{{ previewFolioNumber }}</strong> ya existe registrada para el día <strong>{{ form.date }}</strong>. Para reutilizar este folio debes cambiar la fecha, o bien, asignar un número consecutivo diferente.
+                        </p>
+                    </div>
+
+                    <!-- Informational: Reusing Folio on a Different Allowed Date -->
+                    <div
+                        v-else-if="previousDatesForFolio.length > 0"
+                        class="p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-200 space-y-1"
+                    >
+                        <div class="font-bold flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300">
+                            <CheckCircle2 class="h-4 w-4 shrink-0 text-emerald-600" />
+                            Reutilizando folio existente (fecha permitida)
+                        </div>
+                        <p>
+                            Este folio ya cuenta con actividad previa en: <strong>{{ previousDatesForFolio.join(', ') }}</strong>. Al registrarlo para el <strong>{{ form.date }}</strong>, los reportes sumarán todos sus gastos y nóminas automáticamente bajo este mismo folio.
+                        </p>
+                    </div>
+
                     <!-- Existing Folio Quick Pills & Multi-date Information -->
                     <div class="space-y-2 p-3 bg-zinc-50 dark:bg-zinc-800/40 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs">
                         <div class="flex items-start gap-2 text-zinc-600 dark:text-zinc-400">
@@ -440,11 +501,13 @@ const submit = () => {
                 </Link>
                 <Button
                     type="submit"
-                    :disabled="form.processing"
-                    class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-md px-6 flex items-center justify-center gap-2"
+                    :disabled="form.processing || isDuplicateOnSameDate || !form.folio_consecutive"
+                    class="w-full sm:w-auto rounded-xl shadow-md px-6 flex items-center justify-center gap-2 transition"
+                    :class="isDuplicateOnSameDate ? 'bg-red-600/80 hover:bg-red-600/80 text-white cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 text-white'"
                 >
-                    <Save class="h-4 w-4" />
-                    {{ form.processing ? 'Creando Bitácora...' : 'Guardar y Continuar a Actividades' }}
+                    <AlertTriangle v-if="isDuplicateOnSameDate" class="h-4 w-4" />
+                    <Save v-else class="h-4 w-4" />
+                    {{ form.processing ? 'Creando Bitácora...' : (isDuplicateOnSameDate ? 'Folio Duplicado en esta Fecha (Cambiar fecha o folio)' : 'Guardar y Continuar a Actividades') }}
                 </Button>
             </div>
         </form>
