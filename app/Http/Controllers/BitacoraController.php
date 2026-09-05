@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ActivityType;
 use App\Models\Bitacora;
+use App\Models\BitacoraEmployee;
 use App\Models\Branch;
 use App\Models\CardType;
 use App\Models\Client;
@@ -248,6 +249,25 @@ class BitacoraController extends Controller
         $cardTypes = CardType::where('is_active', true)->get();
         $paymentCards = PaymentCard::where('is_active', true)->with(['paymentMethod', 'cardType'])->get();
 
+        $externalEmployeeHours = BitacoraEmployee::where('bitacora_id', '!=', $bitacora->id)
+            ->where('is_absent', false)
+            ->with('bitacora:id,folio_number,date')
+            ->get(['id', 'bitacora_id', 'employee_id', 'date', 'hours_worked'])
+            ->map(function ($entry) {
+                $dateStr = $entry->date
+                    ? (is_string($entry->date) ? substr($entry->date, 0, 10) : $entry->date->format('Y-m-d'))
+                    : ($entry->bitacora?->date ? (is_string($entry->bitacora->date) ? substr($entry->bitacora->date, 0, 10) : $entry->bitacora->date->format('Y-m-d')) : null);
+
+                return [
+                    'employee_id' => $entry->employee_id,
+                    'date' => $dateStr,
+                    'hours_worked' => (float) $entry->hours_worked,
+                    'folio_number' => $entry->bitacora?->folio_number ?: "Folio #{$entry->bitacora_id}",
+                ];
+            })
+            ->filter(fn ($item) => ! empty($item['date']))
+            ->values();
+
         return Inertia::render('bitacoras/Edit', [
             'bitacora' => $bitacora,
             'branches' => $branches,
@@ -258,6 +278,7 @@ class BitacoraController extends Controller
             'paymentMethods' => $paymentMethods,
             'cardTypes' => $cardTypes,
             'paymentCards' => $paymentCards,
+            'externalEmployeeHours' => $externalEmployeeHours,
             'isAdmin' => $user->hasRole('admin'),
         ]);
     }
@@ -449,18 +470,74 @@ class BitacoraController extends Controller
             }
         }
 
-        foreach ($hoursByEmpAndDate as $data) {
-            $carbonDate = Carbon::parse($data['date']);
-            $maxHours = $carbonDate->isSaturday() ? 6.0 : 8.0;
-            $dayLabel = $carbonDate->isSaturday() ? 'sábado' : 'entre semana';
+        if (! empty($hoursByEmpAndDate)) {
+            $empIds = array_unique(array_column($hoursByEmpAndDate, 'employee_id'));
+            $dates = array_unique(array_column($hoursByEmpAndDate, 'date'));
 
-            if ($data['hours'] > $maxHours) {
-                $employee = Employee::find($data['employee_id']);
-                $empName = $employee ? "{$employee->first_name} {$employee->last_name}" : "ID {$data['employee_id']}";
+            $otherEntries = BitacoraEmployee::whereIn('employee_id', $empIds)
+                ->where('bitacora_id', '!=', $bitacora->id)
+                ->where('is_absent', false)
+                ->where(function ($query) use ($dates) {
+                    $query->whereIn('date', $dates)
+                        ->orWhere(function ($fallbackQ) use ($dates) {
+                            $fallbackQ->whereNull('date')
+                                ->whereHas('bitacora', function ($bQ) use ($dates) {
+                                    $bQ->whereIn('date', $dates);
+                                });
+                        });
+                })
+                ->with(['bitacora:id,folio_number,folio_prefix,folio_consecutive,date'])
+                ->get(['id', 'bitacora_id', 'employee_id', 'date', 'hours_worked']);
 
-                throw ValidationException::withMessages([
-                    'activities' => "El empleado {$empName} no puede tener más de {$maxHours} horas normales el día {$data['date']} ({$dayLabel}). Actual asignado: {$data['hours']} hrs.",
-                ]);
+            $otherHoursMap = [];
+            foreach ($otherEntries as $entry) {
+                $entryDate = $entry->date
+                    ? (is_string($entry->date) ? substr($entry->date, 0, 10) : $entry->date->format('Y-m-d'))
+                    : ($entry->bitacora?->date ? (is_string($entry->bitacora->date) ? substr($entry->bitacora->date, 0, 10) : $entry->bitacora->date->format('Y-m-d')) : null);
+
+                if (! $entryDate || ! in_array($entryDate, $dates, true)) {
+                    continue;
+                }
+
+                $k = "{$entry->employee_id}_{$entryDate}";
+                if (! isset($otherHoursMap[$k])) {
+                    $otherHoursMap[$k] = [
+                        'hours' => 0.0,
+                        'folios' => [],
+                    ];
+                }
+                $otherHoursMap[$k]['hours'] += (float) $entry->hours_worked;
+
+                $folioLabel = $entry->bitacora?->folio_number ?: "Folio #{$entry->bitacora_id}";
+                if (! in_array($folioLabel, $otherHoursMap[$k]['folios'], true)) {
+                    $otherHoursMap[$k]['folios'][] = $folioLabel;
+                }
+            }
+
+            foreach ($hoursByEmpAndDate as $key => $data) {
+                $carbonDate = Carbon::parse($data['date']);
+                $maxHours = $carbonDate->isSaturday() ? 6.0 : 8.0;
+                $dayLabel = $carbonDate->isSaturday() ? 'sábado' : ($carbonDate->isSunday() ? 'domingo' : 'entre semana');
+
+                $other = $otherHoursMap[$key] ?? ['hours' => 0.0, 'folios' => []];
+                $otherHours = (float) $other['hours'];
+                $totalHours = (float) $data['hours'] + $otherHours;
+
+                if ($totalHours > $maxHours) {
+                    $employee = Employee::find($data['employee_id']);
+                    $empName = $employee ? "{$employee->first_name} {$employee->last_name}" : "ID {$data['employee_id']}";
+
+                    if ($otherHours > 0) {
+                        $foliosStr = implode(', ', $other['folios']);
+                        $msg = "El empleado {$empName} excede el límite de {$maxHours} horas normales el día {$data['date']} ({$dayLabel}). Ya tiene {$otherHours} hrs registradas en otra(s) bitácora(s) (folio(s): {$foliosStr}) y en esta bitácora se intentan asignar {$data['hours']} hrs (total acumulado: {$totalHours} hrs).";
+                    } else {
+                        $msg = "El empleado {$empName} no puede tener más de {$maxHours} horas normales el día {$data['date']} ({$dayLabel}). Actual asignado: {$data['hours']} hrs.";
+                    }
+
+                    throw ValidationException::withMessages([
+                        'activities' => $msg,
+                    ]);
+                }
             }
         }
 

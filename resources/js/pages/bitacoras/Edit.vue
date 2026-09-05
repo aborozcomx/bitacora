@@ -103,6 +103,12 @@ const props = defineProps<{
     employees: Employee[];
     paymentMethods: PaymentMethod[];
     paymentCards: PaymentCard[];
+    externalEmployeeHours?: Array<{
+        employee_id: number;
+        date: string;
+        hours_worked: number;
+        folio_number: string;
+    }>;
     isAdmin: boolean;
 }>();
 
@@ -271,9 +277,21 @@ const onPaymentMethodChange = (expRow: ActivityExpenseForm) => {
     }
 };
 
-// Hours aggregation & validation per employee per date across all activities
+interface EmployeeDateHoursSummary {
+    employeeId: number;
+    employeeName: string;
+    date: string;
+    currentHours: number;
+    externalHours: number;
+    otherFolios: string[];
+    totalHours: number;
+    max: number;
+    isExceeded: boolean;
+}
+
+// Hours aggregation & validation per employee per date across all activities & other bitacoras
 const employeeHoursSummaryByDate = computed(() => {
-    const map = new Map<string, { employeeName: string; date: string; hours: number; max: number; isExceeded: boolean }>();
+    const map = new Map<string, EmployeeDateHoursSummary>();
 
     form.activities.forEach(act => {
         const dateStr = act.date;
@@ -281,19 +299,46 @@ const employeeHoursSummaryByDate = computed(() => {
 
         act.employees.forEach(empRow => {
             if (empRow.is_absent || !empRow.employee_id) return;
-            const key = `${empRow.employee_id}_${dateStr}`;
-            const emp = props.employees.find(e => e.id === Number(empRow.employee_id));
-            const name = emp ? `${emp.first_name} ${emp.last_name}` : `ID ${empRow.employee_id}`;
+            const empId = Number(empRow.employee_id);
+            const key = `${empId}_${dateStr}`;
+            const emp = props.employees.find(e => e.id === empId);
+            const name = emp ? `${emp.first_name} ${emp.last_name}` : `ID ${empId}`;
 
-            const current = map.get(key) || { employeeName: name, date: dateStr, hours: 0, max, isExceeded: false };
-            current.hours += Number(empRow.hours_worked) || 0;
-            current.isExceeded = current.hours > max;
-            map.set(key, current);
+            let current = map.get(key);
+            if (!current) {
+                const extEntries = (props.externalEmployeeHours || []).filter(
+                    item => item.employee_id === empId && item.date === dateStr
+                );
+                const externalHours = extEntries.reduce((sum, item) => sum + (Number(item.hours_worked) || 0), 0);
+                const otherFolios = Array.from(new Set(extEntries.map(item => item.folio_number)));
+
+                current = {
+                    employeeId: empId,
+                    employeeName: name,
+                    date: dateStr,
+                    currentHours: 0,
+                    externalHours,
+                    otherFolios,
+                    totalHours: externalHours,
+                    max,
+                    isExceeded: false,
+                };
+                map.set(key, current);
+            }
+
+            current.currentHours += Number(empRow.hours_worked) || 0;
+            current.totalHours = current.currentHours + current.externalHours;
+            current.isExceeded = current.totalHours > max;
         });
     });
 
     return Array.from(map.values());
 });
+
+const getEmployeeDayHoursInfo = (empId: number | string, dateStr: string) => {
+    if (!empId || !dateStr) return null;
+    return employeeHoursSummaryByDate.value.find(item => item.employeeId === Number(empId) && item.date === dateStr) || null;
+};
 
 const hasHoursValidationErrors = computed(() => {
     return employeeHoursSummaryByDate.value.some(item => item.isExceeded);
@@ -401,11 +446,14 @@ const submit = () => {
         <div v-if="hasHoursValidationErrors" class="bg-red-50 dark:bg-red-950/50 border-2 border-red-300 dark:border-red-800 p-4 rounded-xl space-y-2">
             <div class="flex items-center gap-2 text-red-800 dark:text-red-300 font-bold text-sm">
                 <ShieldAlert class="h-5 w-5 text-red-600 shrink-0" />
-                <span>Atención: Límite de Horas Normales Excedido</span>
+                <span>Atención: Límite de Horas Diarias Excedido (6 a 8 hrs diarias por empleado y fecha)</span>
             </div>
             <ul class="text-xs text-red-700 dark:text-red-400 list-disc list-inside space-y-1">
                 <li v-for="err in employeeHoursSummaryByDate.filter(e => e.isExceeded)" :key="`${err.employeeName}_${err.date}`">
-                    <strong>{{ err.employeeName }}</strong> tiene <strong>{{ err.hours }} hrs</strong> normales asignadas el día <strong>{{ err.date }}</strong> (Máximo permitido: {{ err.max }} hrs).
+                    <strong>{{ err.employeeName }}</strong> el día <strong>{{ err.date }}</strong> acumula <strong>{{ err.totalHours }} hrs</strong> normales (Límite diario: {{ err.max }} hrs).
+                    <span v-if="err.externalHours > 0" class="text-amber-800 dark:text-amber-300 font-medium">
+                        — Registradas en otro(s) folio(s) [{{ err.otherFolios.join(', ') }}]: {{ err.externalHours }} hrs + En esta bitácora: {{ err.currentHours }} hrs.
+                    </span>
                 </li>
             </ul>
         </div>
@@ -535,7 +583,7 @@ const submit = () => {
                                     <tbody class="divide-y divide-zinc-200 dark:divide-zinc-800">
                                         <tr v-for="(empRow, empIndex) in act.employees" :key="empIndex" :class="empRow.is_absent ? 'bg-amber-50/40 dark:bg-amber-950/20' : ''">
                                             <!-- Employee Select -->
-                                            <td class="py-2 px-3 min-w-[200px]">
+                                            <td class="py-2 px-3 min-w-[220px]">
                                                 <select
                                                     v-model="empRow.employee_id"
                                                     required
@@ -546,6 +594,27 @@ const submit = () => {
                                                         {{ e.first_name }} {{ e.last_name }} [{{ e.employee_code }}]
                                                     </option>
                                                 </select>
+                                                <!-- Day hours feedback badge -->
+                                                <div v-if="empRow.employee_id && !empRow.is_absent && getEmployeeDayHoursInfo(empRow.employee_id, act.date)" class="mt-1">
+                                                    <span
+                                                        v-if="getEmployeeDayHoursInfo(empRow.employee_id, act.date)?.isExceeded"
+                                                        class="inline-flex items-center gap-1 text-[10px] font-bold text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-950/80 px-1.5 py-0.5 rounded"
+                                                    >
+                                                        ⚠️ Excede límite ({{ getEmployeeDayHoursInfo(empRow.employee_id, act.date)?.totalHours }}/{{ getEmployeeDayHoursInfo(empRow.employee_id, act.date)?.max }} hrs)
+                                                    </span>
+                                                    <span
+                                                        v-else-if="getEmployeeDayHoursInfo(empRow.employee_id, act.date)!.externalHours > 0"
+                                                        class="inline-flex items-center gap-1 text-[10px] font-medium text-amber-800 dark:text-amber-300 bg-amber-100/80 dark:bg-amber-950/60 px-1.5 py-0.5 rounded"
+                                                    >
+                                                        ℹ️ {{ getEmployeeDayHoursInfo(empRow.employee_id, act.date)?.externalHours }}h en otro folio · Total día: {{ getEmployeeDayHoursInfo(empRow.employee_id, act.date)?.totalHours }}/{{ getEmployeeDayHoursInfo(empRow.employee_id, act.date)?.max }}h
+                                                    </span>
+                                                    <span
+                                                        v-else-if="getEmployeeDayHoursInfo(empRow.employee_id, act.date)!.currentHours > 0"
+                                                        class="inline-flex items-center gap-1 text-[10px] text-zinc-500 dark:text-zinc-400"
+                                                    >
+                                                        Día: {{ getEmployeeDayHoursInfo(empRow.employee_id, act.date)?.totalHours }}/{{ getEmployeeDayHoursInfo(empRow.employee_id, act.date)?.max }} hrs cubiertas
+                                                    </span>
+                                                </div>
                                             </td>
 
                                             <!-- Absent Toggle Button -->

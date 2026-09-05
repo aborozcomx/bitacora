@@ -292,3 +292,229 @@ test('salary report aggregates same folio across different dates in byFolio and 
         expect((float) $carlos['by_folio'][0]['total_earned'])->toBe(1700.00);
     });
 });
+
+test('employee daily normal hours across different folios cannot exceed 8 hrs on weekday', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $branch = Branch::create(['name' => 'Sucursal Norte', 'code' => 'SUC-NOR', 'is_active' => true]);
+    $client = Client::create(['name' => 'Cliente ABC', 'code' => 'ABC-01', 'is_active' => true]);
+
+    $emp = Employee::create([
+        'branch_id' => $branch->id,
+        'first_name' => 'Marcos',
+        'last_name' => 'Luna',
+        'employee_code' => 'EMP-MARCOS',
+        'base_hourly_rate' => 100.00,
+        'overtime_hourly_rate' => 150.00,
+        'is_active' => true,
+    ]);
+
+    // Folio 1 (FOLIO-A): Employee already has 5 normal hours on 2026-09-02 (Wednesday)
+    $b1 = Bitacora::create([
+        'branch_id' => $branch->id,
+        'user_id' => $admin->id,
+        'client_id' => $client->id,
+        'folio_number' => 'FOLIO-A',
+        'date' => '2026-09-02',
+    ]);
+
+    BitacoraEmployee::create([
+        'bitacora_id' => $b1->id,
+        'employee_id' => $emp->id,
+        'date' => '2026-09-02',
+        'hours_worked' => 5.0,
+        'overtime_hours' => 0.0,
+        'base_rate_applied' => 100.00,
+        'overtime_rate_applied' => 150.00,
+        'total_earned' => 500.00,
+        'is_absent' => false,
+    ]);
+
+    // Folio 2 (FOLIO-B): User tries to assign 4 normal hours on the SAME date 2026-09-02 to Marcos
+    // Total = 5 + 4 = 9 hrs (> 8 hrs max weekday)
+    $b2 = Bitacora::create([
+        'branch_id' => $branch->id,
+        'user_id' => $admin->id,
+        'client_id' => $client->id,
+        'folio_number' => 'FOLIO-B',
+        'date' => '2026-09-02',
+    ]);
+
+    $response = $this->actingAs($admin)->put("/bitacoras/{$b2->id}", [
+        'activities' => [
+            [
+                'date' => '2026-09-02',
+                'description' => 'Segunda actividad en otro folio',
+                'employees' => [
+                    [
+                        'employee_id' => $emp->id,
+                        'is_absent' => false,
+                        'hours_worked' => 4.0,
+                        'overtime_hours' => 0.0,
+                    ],
+                ],
+            ],
+        ],
+    ]);
+
+    $response->assertSessionHasErrors('activities');
+    $errors = session('errors')->get('activities');
+    expect($errors[0])->toContain('Marcos Luna')
+        ->toContain('excede el límite de 8 horas normales')
+        ->toContain('FOLIO-A')
+        ->toContain('5 hrs')
+        ->toContain('4 hrs')
+        ->toContain('9 hrs');
+});
+
+test('employee daily normal hours across different folios cannot exceed 6 hrs on saturday', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $branch = Branch::create(['name' => 'Sucursal Norte', 'code' => 'SUC-NOR', 'is_active' => true]);
+    $client = Client::create(['name' => 'Cliente ABC', 'code' => 'ABC-01', 'is_active' => true]);
+
+    $emp = Employee::create([
+        'branch_id' => $branch->id,
+        'first_name' => 'Marcos',
+        'last_name' => 'Luna',
+        'employee_code' => 'EMP-MARCOS-SAT',
+        'base_hourly_rate' => 100.00,
+        'overtime_hourly_rate' => 150.00,
+        'is_active' => true,
+    ]);
+
+    // 2026-09-05 is Saturday
+    // Folio 1: 4 normal hours
+    $b1 = Bitacora::create([
+        'branch_id' => $branch->id,
+        'user_id' => $admin->id,
+        'client_id' => $client->id,
+        'folio_number' => 'SAT-01',
+        'date' => '2026-09-05',
+    ]);
+
+    BitacoraEmployee::create([
+        'bitacora_id' => $b1->id,
+        'employee_id' => $emp->id,
+        'date' => '2026-09-05',
+        'hours_worked' => 4.0,
+        'overtime_hours' => 0.0,
+        'base_rate_applied' => 100.00,
+        'overtime_rate_applied' => 150.00,
+        'total_earned' => 400.00,
+        'is_absent' => false,
+    ]);
+
+    // Folio 2: User tries to assign 3 normal hours on the same Saturday
+    // Total = 4 + 3 = 7 hrs (> 6 hrs max Saturday)
+    $b2 = Bitacora::create([
+        'branch_id' => $branch->id,
+        'user_id' => $admin->id,
+        'client_id' => $client->id,
+        'folio_number' => 'SAT-02',
+        'date' => '2026-09-05',
+    ]);
+
+    $response = $this->actingAs($admin)->put("/bitacoras/{$b2->id}", [
+        'activities' => [
+            [
+                'date' => '2026-09-05',
+                'description' => 'Turno sábado en otro folio',
+                'employees' => [
+                    [
+                        'employee_id' => $emp->id,
+                        'is_absent' => false,
+                        'hours_worked' => 3.0,
+                        'overtime_hours' => 0.0,
+                    ],
+                ],
+            ],
+        ],
+    ]);
+
+    $response->assertSessionHasErrors('activities');
+    $errors = session('errors')->get('activities');
+    expect($errors[0])->toContain('Marcos Luna')
+        ->toContain('excede el límite de 6 horas normales')
+        ->toContain('sábado')
+        ->toContain('SAT-01')
+        ->toContain('4 hrs')
+        ->toContain('3 hrs')
+        ->toContain('7 hrs');
+});
+
+test('employee daily normal hours across different folios can equal up to 8 hrs without exceeding', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $branch = Branch::create(['name' => 'Sucursal Norte', 'code' => 'SUC-NOR', 'is_active' => true]);
+    $client = Client::create(['name' => 'Cliente ABC', 'code' => 'ABC-01', 'is_active' => true]);
+
+    $emp = Employee::create([
+        'branch_id' => $branch->id,
+        'first_name' => 'Marcos',
+        'last_name' => 'Luna',
+        'employee_code' => 'EMP-MARCOS-OK',
+        'base_hourly_rate' => 100.00,
+        'overtime_hourly_rate' => 150.00,
+        'is_active' => true,
+    ]);
+
+    // Folio 1: 4 normal hours on 2026-09-02 (Wednesday)
+    $b1 = Bitacora::create([
+        'branch_id' => $branch->id,
+        'user_id' => $admin->id,
+        'client_id' => $client->id,
+        'folio_number' => 'FOLIO-OK-A',
+        'date' => '2026-09-02',
+    ]);
+
+    BitacoraEmployee::create([
+        'bitacora_id' => $b1->id,
+        'employee_id' => $emp->id,
+        'date' => '2026-09-02',
+        'hours_worked' => 4.0,
+        'overtime_hours' => 0.0,
+        'base_rate_applied' => 100.00,
+        'overtime_rate_applied' => 150.00,
+        'total_earned' => 400.00,
+        'is_absent' => false,
+    ]);
+
+    // Folio 2: Assign 4 normal hours on the SAME Wednesday
+    // Total = 4 + 4 = 8 hrs (<= 8 hrs max weekday) -> MUST SUCCEED
+    $b2 = Bitacora::create([
+        'branch_id' => $branch->id,
+        'user_id' => $admin->id,
+        'client_id' => $client->id,
+        'folio_number' => 'FOLIO-OK-B',
+        'date' => '2026-09-02',
+    ]);
+
+    $response = $this->actingAs($admin)->put("/bitacoras/{$b2->id}", [
+        'activities' => [
+            [
+                'date' => '2026-09-02',
+                'description' => 'Segundo medio turno completando 8 hrs',
+                'employees' => [
+                    [
+                        'employee_id' => $emp->id,
+                        'is_absent' => false,
+                        'hours_worked' => 4.0,
+                        'overtime_hours' => 1.0,
+                    ],
+                ],
+            ],
+        ],
+    ]);
+
+    $response->assertRedirect("/bitacoras/{$b2->id}");
+    $this->assertDatabaseHas('bitacora_employees', [
+        'bitacora_id' => $b2->id,
+        'employee_id' => $emp->id,
+        'hours_worked' => 4.00,
+        'overtime_hours' => 1.00,
+    ]);
+});
