@@ -27,6 +27,16 @@ interface ActivityType {
 const props = defineProps<{
     activities: {
         data: ActivityType[];
+        current_page?: number;
+        last_page?: number;
+        per_page?: number;
+        total?: number;
+        from?: number | null;
+        to?: number | null;
+    };
+    filters?: {
+        search?: string;
+        per_page?: number;
     };
 }>();
 
@@ -125,6 +135,8 @@ const confirmDelete = () => {
         <DataTable
             :columns="columns"
             :data="activities.data"
+            :pagination="activities"
+            :filters="filters"
             searchPlaceholder="Buscar por nombre o descripción de actividad..."
         >
             <template #cell-name="{ row }">

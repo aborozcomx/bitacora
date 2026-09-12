@@ -29,6 +29,16 @@ interface Folio {
 const props = defineProps<{
     folios: {
         data: Folio[];
+        current_page?: number;
+        last_page?: number;
+        per_page?: number;
+        total?: number;
+        from?: number | null;
+        to?: number | null;
+    };
+    filters?: {
+        search?: string;
+        per_page?: number;
     };
 }>();
 
@@ -129,6 +139,9 @@ const confirmDelete = () => {
         <DataTable
             :columns="columns"
             :data="folios.data"
+            :pagination="folios"
+            :filters="filters"
+            :default-per-page="15"
             searchPlaceholder="Buscar por nombre o descripción de folio..."
         >
             <template #cell-name="{ row }">

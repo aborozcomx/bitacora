@@ -52,6 +52,12 @@ const props = defineProps<{
     bitacoras: {
         data: Bitacora[];
         links: any[];
+        current_page?: number;
+        last_page?: number;
+        total?: number;
+        from?: number | null;
+        to?: number | null;
+        per_page?: number;
     };
     branches: Branch[];
     clients: Client[];
@@ -61,6 +67,7 @@ const props = defineProps<{
         client_id?: string;
         start_date?: string;
         end_date?: string;
+        per_page?: number;
     };
     canCreate: boolean;
 }>();
@@ -70,6 +77,7 @@ const branchId = ref(props.filters.branch_id || '');
 const clientId = ref(props.filters.client_id || '');
 const startDate = ref(props.filters.start_date || '');
 const endDate = ref(props.filters.end_date || '');
+const perPage = ref(props.bitacoras.per_page || props.filters.per_page || 10);
 
 const showDeleteDialog = ref(false);
 const selectedBitacora = ref<Bitacora | null>(null);
@@ -81,6 +89,7 @@ const handleSearch = () => {
         client_id: clientId.value,
         start_date: startDate.value,
         end_date: endDate.value,
+        per_page: perPage.value,
     }, { preserveState: true, replace: true });
 };
 
@@ -389,6 +398,29 @@ const folioCounts = computed(() => {
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Footer Pagination Controls -->
+            <div v-if="bitacoras.links && bitacoras.links.length > 3" class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 sm:p-4 bg-zinc-50/60 dark:bg-zinc-800/40 border-t border-zinc-200 dark:border-zinc-800 text-xs sm:text-sm text-zinc-600 dark:text-zinc-400">
+                <div class="text-center sm:text-left">
+                    Mostrando <span class="font-semibold text-zinc-900 dark:text-zinc-100">{{ bitacoras.from || 0 }}</span> a
+                    <span class="font-semibold text-zinc-900 dark:text-zinc-100">{{ bitacoras.to || 0 }}</span> de
+                    <span class="font-semibold text-zinc-900 dark:text-zinc-100">{{ bitacoras.total || 0 }}</span> registros
+                </div>
+
+                <div class="flex items-center justify-center sm:justify-end gap-1 flex-wrap">
+                    <Link
+                        v-for="(link, i) in bitacoras.links"
+                        :key="i"
+                        :href="link.url || '#'"
+                        v-html="link.label"
+                        class="px-2.5 py-1 text-xs rounded-md border transition"
+                        :class="[
+                            link.active ? 'bg-indigo-600 text-white border-indigo-600 font-bold' : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100',
+                            !link.url ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''
+                        ]"
+                    />
+                </div>
             </div>
         </div>
     </div>

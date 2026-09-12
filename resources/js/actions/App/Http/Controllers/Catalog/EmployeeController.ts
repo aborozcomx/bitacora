@@ -82,7 +82,7 @@ index.form = indexForm
 
 /**
 * @see \App\Http\Controllers\Catalog\EmployeeController::store
-* @see app/Http/Controllers/Catalog/EmployeeController.php:48
+* @see app/Http/Controllers/Catalog/EmployeeController.php:60
 * @route '/catalogs/employees'
 */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -97,7 +97,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\Catalog\EmployeeController::store
-* @see app/Http/Controllers/Catalog/EmployeeController.php:48
+* @see app/Http/Controllers/Catalog/EmployeeController.php:60
 * @route '/catalogs/employees'
 */
 store.url = (options?: RouteQueryOptions) => {
@@ -106,7 +106,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Catalog\EmployeeController::store
-* @see app/Http/Controllers/Catalog/EmployeeController.php:48
+* @see app/Http/Controllers/Catalog/EmployeeController.php:60
 * @route '/catalogs/employees'
 */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -116,7 +116,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
 /**
 * @see \App\Http\Controllers\Catalog\EmployeeController::store
-* @see app/Http/Controllers/Catalog/EmployeeController.php:48
+* @see app/Http/Controllers/Catalog/EmployeeController.php:60
 * @route '/catalogs/employees'
 */
 const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -126,7 +126,7 @@ const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => 
 
 /**
 * @see \App\Http\Controllers\Catalog\EmployeeController::store
-* @see app/Http/Controllers/Catalog/EmployeeController.php:48
+* @see app/Http/Controllers/Catalog/EmployeeController.php:60
 * @route '/catalogs/employees'
 */
 storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -138,7 +138,7 @@ store.form = storeForm
 
 /**
 * @see \App\Http\Controllers\Catalog\EmployeeController::update
-* @see app/Http/Controllers/Catalog/EmployeeController.php:65
+* @see app/Http/Controllers/Catalog/EmployeeController.php:77
 * @route '/catalogs/employees/{employee}'
 */
 export const update = (args: { employee: number | { id: number } } | [employee: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -153,7 +153,7 @@ update.definition = {
 
 /**
 * @see \App\Http\Controllers\Catalog\EmployeeController::update
-* @see app/Http/Controllers/Catalog/EmployeeController.php:65
+* @see app/Http/Controllers/Catalog/EmployeeController.php:77
 * @route '/catalogs/employees/{employee}'
 */
 update.url = (args: { employee: number | { id: number } } | [employee: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -186,7 +186,7 @@ update.url = (args: { employee: number | { id: number } } | [employee: number | 
 
 /**
 * @see \App\Http\Controllers\Catalog\EmployeeController::update
-* @see app/Http/Controllers/Catalog/EmployeeController.php:65
+* @see app/Http/Controllers/Catalog/EmployeeController.php:77
 * @route '/catalogs/employees/{employee}'
 */
 update.put = (args: { employee: number | { id: number } } | [employee: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -196,7 +196,7 @@ update.put = (args: { employee: number | { id: number } } | [employee: number | 
 
 /**
 * @see \App\Http\Controllers\Catalog\EmployeeController::update
-* @see app/Http/Controllers/Catalog/EmployeeController.php:65
+* @see app/Http/Controllers/Catalog/EmployeeController.php:77
 * @route '/catalogs/employees/{employee}'
 */
 update.patch = (args: { employee: number | { id: number } } | [employee: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -206,7 +206,7 @@ update.patch = (args: { employee: number | { id: number } } | [employee: number 
 
 /**
 * @see \App\Http\Controllers\Catalog\EmployeeController::update
-* @see app/Http/Controllers/Catalog/EmployeeController.php:65
+* @see app/Http/Controllers/Catalog/EmployeeController.php:77
 * @route '/catalogs/employees/{employee}'
 */
 const updateForm = (args: { employee: number | { id: number } } | [employee: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -221,7 +221,7 @@ const updateForm = (args: { employee: number | { id: number } } | [employee: num
 
 /**
 * @see \App\Http\Controllers\Catalog\EmployeeController::update
-* @see app/Http/Controllers/Catalog/EmployeeController.php:65
+* @see app/Http/Controllers/Catalog/EmployeeController.php:77
 * @route '/catalogs/employees/{employee}'
 */
 updateForm.put = (args: { employee: number | { id: number } } | [employee: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -236,7 +236,7 @@ updateForm.put = (args: { employee: number | { id: number } } | [employee: numbe
 
 /**
 * @see \App\Http\Controllers\Catalog\EmployeeController::update
-* @see app/Http/Controllers/Catalog/EmployeeController.php:65
+* @see app/Http/Controllers/Catalog/EmployeeController.php:77
 * @route '/catalogs/employees/{employee}'
 */
 updateForm.patch = (args: { employee: number | { id: number } } | [employee: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -253,7 +253,7 @@ update.form = updateForm
 
 /**
 * @see \App\Http\Controllers\Catalog\EmployeeController::destroy
-* @see app/Http/Controllers/Catalog/EmployeeController.php:82
+* @see app/Http/Controllers/Catalog/EmployeeController.php:94
 * @route '/catalogs/employees/{employee}'
 */
 export const destroy = (args: { employee: number | { id: number } } | [employee: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -268,7 +268,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\Catalog\EmployeeController::destroy
-* @see app/Http/Controllers/Catalog/EmployeeController.php:82
+* @see app/Http/Controllers/Catalog/EmployeeController.php:94
 * @route '/catalogs/employees/{employee}'
 */
 destroy.url = (args: { employee: number | { id: number } } | [employee: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -301,7 +301,7 @@ destroy.url = (args: { employee: number | { id: number } } | [employee: number |
 
 /**
 * @see \App\Http\Controllers\Catalog\EmployeeController::destroy
-* @see app/Http/Controllers/Catalog/EmployeeController.php:82
+* @see app/Http/Controllers/Catalog/EmployeeController.php:94
 * @route '/catalogs/employees/{employee}'
 */
 destroy.delete = (args: { employee: number | { id: number } } | [employee: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -311,7 +311,7 @@ destroy.delete = (args: { employee: number | { id: number } } | [employee: numbe
 
 /**
 * @see \App\Http\Controllers\Catalog\EmployeeController::destroy
-* @see app/Http/Controllers/Catalog/EmployeeController.php:82
+* @see app/Http/Controllers/Catalog/EmployeeController.php:94
 * @route '/catalogs/employees/{employee}'
 */
 const destroyForm = (args: { employee: number | { id: number } } | [employee: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -326,7 +326,7 @@ const destroyForm = (args: { employee: number | { id: number } } | [employee: nu
 
 /**
 * @see \App\Http\Controllers\Catalog\EmployeeController::destroy
-* @see app/Http/Controllers/Catalog/EmployeeController.php:82
+* @see app/Http/Controllers/Catalog/EmployeeController.php:94
 * @route '/catalogs/employees/{employee}'
 */
 destroyForm.delete = (args: { employee: number | { id: number } } | [employee: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

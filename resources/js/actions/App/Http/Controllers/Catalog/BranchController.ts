@@ -82,7 +82,7 @@ index.form = indexForm
 
 /**
 * @see \App\Http\Controllers\Catalog\BranchController::store
-* @see app/Http/Controllers/Catalog/BranchController.php:31
+* @see app/Http/Controllers/Catalog/BranchController.php:39
 * @route '/catalogs/branches'
 */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -97,7 +97,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\Catalog\BranchController::store
-* @see app/Http/Controllers/Catalog/BranchController.php:31
+* @see app/Http/Controllers/Catalog/BranchController.php:39
 * @route '/catalogs/branches'
 */
 store.url = (options?: RouteQueryOptions) => {
@@ -106,7 +106,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Catalog\BranchController::store
-* @see app/Http/Controllers/Catalog/BranchController.php:31
+* @see app/Http/Controllers/Catalog/BranchController.php:39
 * @route '/catalogs/branches'
 */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -116,7 +116,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
 /**
 * @see \App\Http\Controllers\Catalog\BranchController::store
-* @see app/Http/Controllers/Catalog/BranchController.php:31
+* @see app/Http/Controllers/Catalog/BranchController.php:39
 * @route '/catalogs/branches'
 */
 const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -126,7 +126,7 @@ const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => 
 
 /**
 * @see \App\Http\Controllers\Catalog\BranchController::store
-* @see app/Http/Controllers/Catalog/BranchController.php:31
+* @see app/Http/Controllers/Catalog/BranchController.php:39
 * @route '/catalogs/branches'
 */
 storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -138,7 +138,7 @@ store.form = storeForm
 
 /**
 * @see \App\Http\Controllers\Catalog\BranchController::update
-* @see app/Http/Controllers/Catalog/BranchController.php:46
+* @see app/Http/Controllers/Catalog/BranchController.php:54
 * @route '/catalogs/branches/{branch}'
 */
 export const update = (args: { branch: number | { id: number } } | [branch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -153,7 +153,7 @@ update.definition = {
 
 /**
 * @see \App\Http\Controllers\Catalog\BranchController::update
-* @see app/Http/Controllers/Catalog/BranchController.php:46
+* @see app/Http/Controllers/Catalog/BranchController.php:54
 * @route '/catalogs/branches/{branch}'
 */
 update.url = (args: { branch: number | { id: number } } | [branch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -186,7 +186,7 @@ update.url = (args: { branch: number | { id: number } } | [branch: number | { id
 
 /**
 * @see \App\Http\Controllers\Catalog\BranchController::update
-* @see app/Http/Controllers/Catalog/BranchController.php:46
+* @see app/Http/Controllers/Catalog/BranchController.php:54
 * @route '/catalogs/branches/{branch}'
 */
 update.put = (args: { branch: number | { id: number } } | [branch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -196,7 +196,7 @@ update.put = (args: { branch: number | { id: number } } | [branch: number | { id
 
 /**
 * @see \App\Http\Controllers\Catalog\BranchController::update
-* @see app/Http/Controllers/Catalog/BranchController.php:46
+* @see app/Http/Controllers/Catalog/BranchController.php:54
 * @route '/catalogs/branches/{branch}'
 */
 update.patch = (args: { branch: number | { id: number } } | [branch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -206,7 +206,7 @@ update.patch = (args: { branch: number | { id: number } } | [branch: number | { 
 
 /**
 * @see \App\Http\Controllers\Catalog\BranchController::update
-* @see app/Http/Controllers/Catalog/BranchController.php:46
+* @see app/Http/Controllers/Catalog/BranchController.php:54
 * @route '/catalogs/branches/{branch}'
 */
 const updateForm = (args: { branch: number | { id: number } } | [branch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -221,7 +221,7 @@ const updateForm = (args: { branch: number | { id: number } } | [branch: number 
 
 /**
 * @see \App\Http\Controllers\Catalog\BranchController::update
-* @see app/Http/Controllers/Catalog/BranchController.php:46
+* @see app/Http/Controllers/Catalog/BranchController.php:54
 * @route '/catalogs/branches/{branch}'
 */
 updateForm.put = (args: { branch: number | { id: number } } | [branch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -236,7 +236,7 @@ updateForm.put = (args: { branch: number | { id: number } } | [branch: number | 
 
 /**
 * @see \App\Http\Controllers\Catalog\BranchController::update
-* @see app/Http/Controllers/Catalog/BranchController.php:46
+* @see app/Http/Controllers/Catalog/BranchController.php:54
 * @route '/catalogs/branches/{branch}'
 */
 updateForm.patch = (args: { branch: number | { id: number } } | [branch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -253,7 +253,7 @@ update.form = updateForm
 
 /**
 * @see \App\Http\Controllers\Catalog\BranchController::destroy
-* @see app/Http/Controllers/Catalog/BranchController.php:61
+* @see app/Http/Controllers/Catalog/BranchController.php:69
 * @route '/catalogs/branches/{branch}'
 */
 export const destroy = (args: { branch: number | { id: number } } | [branch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -268,7 +268,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\Catalog\BranchController::destroy
-* @see app/Http/Controllers/Catalog/BranchController.php:61
+* @see app/Http/Controllers/Catalog/BranchController.php:69
 * @route '/catalogs/branches/{branch}'
 */
 destroy.url = (args: { branch: number | { id: number } } | [branch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -301,7 +301,7 @@ destroy.url = (args: { branch: number | { id: number } } | [branch: number | { i
 
 /**
 * @see \App\Http\Controllers\Catalog\BranchController::destroy
-* @see app/Http/Controllers/Catalog/BranchController.php:61
+* @see app/Http/Controllers/Catalog/BranchController.php:69
 * @route '/catalogs/branches/{branch}'
 */
 destroy.delete = (args: { branch: number | { id: number } } | [branch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -311,7 +311,7 @@ destroy.delete = (args: { branch: number | { id: number } } | [branch: number | 
 
 /**
 * @see \App\Http\Controllers\Catalog\BranchController::destroy
-* @see app/Http/Controllers/Catalog/BranchController.php:61
+* @see app/Http/Controllers/Catalog/BranchController.php:69
 * @route '/catalogs/branches/{branch}'
 */
 const destroyForm = (args: { branch: number | { id: number } } | [branch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -326,7 +326,7 @@ const destroyForm = (args: { branch: number | { id: number } } | [branch: number
 
 /**
 * @see \App\Http\Controllers\Catalog\BranchController::destroy
-* @see app/Http/Controllers/Catalog/BranchController.php:61
+* @see app/Http/Controllers/Catalog/BranchController.php:69
 * @route '/catalogs/branches/{branch}'
 */
 destroyForm.delete = (args: { branch: number | { id: number } } | [branch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

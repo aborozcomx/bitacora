@@ -63,10 +63,17 @@ class BitacoraController extends Controller
             })
             ->when($request->end_date, function ($query, $endDate) {
                 $query->whereDate('date', '<=', $endDate);
-            })
+            });
+
+        $perPage = $request->integer('per_page', 10);
+        if (! in_array($perPage, [5, 10, 15, 25, 50, 100])) {
+            $perPage = 10;
+        }
+
+        $bitacoras = $bitacoras
             ->latest('date')
             ->latest('id')
-            ->paginate(10)
+            ->paginate($perPage)
             ->withQueryString();
 
         $branches = $user->hasRole('admin')
@@ -81,7 +88,7 @@ class BitacoraController extends Controller
             'bitacoras' => $bitacoras,
             'branches' => $branches,
             'clients' => $clients,
-            'filters' => $request->only(['search', 'branch_id', 'client_id', 'start_date', 'end_date']),
+            'filters' => $request->only(['search', 'branch_id', 'client_id', 'start_date', 'end_date', 'per_page']),
             'canCreate' => $user->can('create', Bitacora::class),
         ]);
     }

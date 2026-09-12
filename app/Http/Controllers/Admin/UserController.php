@@ -17,20 +17,33 @@ class UserController extends Controller
 {
     public function index(Request $request): Response
     {
+        $perPage = $request->integer('per_page', 10);
+        if (! in_array($perPage, [5, 10, 15, 25, 50, 100])) {
+            $perPage = 10;
+        }
+
         $users = User::with(['roles', 'branches'])
             ->when($request->search, function ($query, $search) {
-                $query->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhereHas('roles', function ($rq) use ($search) {
+                            $rq->where('name', 'like', "%{$search}%");
+                        });
+                });
             })
             ->latest()
-            ->paginate(10)
+            ->paginate($perPage)
             ->withQueryString();
 
         return Inertia::render('admin/Users/Index', [
             'users' => $users,
             'roles' => Role::all(),
             'branches' => Branch::where('is_active', true)->get(),
-            'filters' => $request->only(['search']),
+            'filters' => [
+                'search' => $request->search,
+                'per_page' => $perPage,
+            ],
         ]);
     }
 

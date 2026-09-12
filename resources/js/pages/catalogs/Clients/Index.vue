@@ -51,6 +51,16 @@ interface Client {
 const props = defineProps<{
     clients: {
         data: Client[];
+        current_page?: number;
+        last_page?: number;
+        per_page?: number;
+        total?: number;
+        from?: number | null;
+        to?: number | null;
+    };
+    filters?: {
+        search?: string;
+        per_page?: number;
     };
 }>();
 
@@ -237,6 +247,8 @@ const confirmDeleteBranch = () => {
         <DataTable
             :columns="columns"
             :data="clients.data"
+            :pagination="clients"
+            :filters="filters"
             searchPlaceholder="Buscar cliente o sucursal por código, nombre, contacto..."
         >
             <template #cell-expander="{ row }">

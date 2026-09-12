@@ -29,6 +29,16 @@ interface Branch {
 const props = defineProps<{
     branches: {
         data: Branch[];
+        current_page?: number;
+        last_page?: number;
+        per_page?: number;
+        total?: number;
+        from?: number | null;
+        to?: number | null;
+    };
+    filters?: {
+        search?: string;
+        per_page?: number;
     };
 }>();
 
@@ -133,6 +143,8 @@ const confirmDelete = () => {
         <DataTable
             :columns="columns"
             :data="branches.data"
+            :pagination="branches"
+            :filters="filters"
             searchPlaceholder="Buscar sucursal por código, nombre, dirección..."
         >
             <template #cell-code="{ row }">

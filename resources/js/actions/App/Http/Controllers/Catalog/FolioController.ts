@@ -82,7 +82,7 @@ index.form = indexForm
 
 /**
 * @see \App\Http\Controllers\Catalog\FolioController::store
-* @see app/Http/Controllers/Catalog/FolioController.php:31
+* @see app/Http/Controllers/Catalog/FolioController.php:39
 * @route '/catalogs/folios'
 */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -97,7 +97,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\Catalog\FolioController::store
-* @see app/Http/Controllers/Catalog/FolioController.php:31
+* @see app/Http/Controllers/Catalog/FolioController.php:39
 * @route '/catalogs/folios'
 */
 store.url = (options?: RouteQueryOptions) => {
@@ -106,7 +106,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Catalog\FolioController::store
-* @see app/Http/Controllers/Catalog/FolioController.php:31
+* @see app/Http/Controllers/Catalog/FolioController.php:39
 * @route '/catalogs/folios'
 */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -116,7 +116,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
 /**
 * @see \App\Http\Controllers\Catalog\FolioController::store
-* @see app/Http/Controllers/Catalog/FolioController.php:31
+* @see app/Http/Controllers/Catalog/FolioController.php:39
 * @route '/catalogs/folios'
 */
 const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -126,7 +126,7 @@ const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => 
 
 /**
 * @see \App\Http\Controllers\Catalog\FolioController::store
-* @see app/Http/Controllers/Catalog/FolioController.php:31
+* @see app/Http/Controllers/Catalog/FolioController.php:39
 * @route '/catalogs/folios'
 */
 storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -138,7 +138,7 @@ store.form = storeForm
 
 /**
 * @see \App\Http\Controllers\Catalog\FolioController::update
-* @see app/Http/Controllers/Catalog/FolioController.php:49
+* @see app/Http/Controllers/Catalog/FolioController.php:57
 * @route '/catalogs/folios/{folio}'
 */
 export const update = (args: { folio: number | { id: number } } | [folio: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -153,7 +153,7 @@ update.definition = {
 
 /**
 * @see \App\Http\Controllers\Catalog\FolioController::update
-* @see app/Http/Controllers/Catalog/FolioController.php:49
+* @see app/Http/Controllers/Catalog/FolioController.php:57
 * @route '/catalogs/folios/{folio}'
 */
 update.url = (args: { folio: number | { id: number } } | [folio: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -186,7 +186,7 @@ update.url = (args: { folio: number | { id: number } } | [folio: number | { id: 
 
 /**
 * @see \App\Http\Controllers\Catalog\FolioController::update
-* @see app/Http/Controllers/Catalog/FolioController.php:49
+* @see app/Http/Controllers/Catalog/FolioController.php:57
 * @route '/catalogs/folios/{folio}'
 */
 update.put = (args: { folio: number | { id: number } } | [folio: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -196,7 +196,7 @@ update.put = (args: { folio: number | { id: number } } | [folio: number | { id: 
 
 /**
 * @see \App\Http\Controllers\Catalog\FolioController::update
-* @see app/Http/Controllers/Catalog/FolioController.php:49
+* @see app/Http/Controllers/Catalog/FolioController.php:57
 * @route '/catalogs/folios/{folio}'
 */
 update.patch = (args: { folio: number | { id: number } } | [folio: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -206,7 +206,7 @@ update.patch = (args: { folio: number | { id: number } } | [folio: number | { id
 
 /**
 * @see \App\Http\Controllers\Catalog\FolioController::update
-* @see app/Http/Controllers/Catalog/FolioController.php:49
+* @see app/Http/Controllers/Catalog/FolioController.php:57
 * @route '/catalogs/folios/{folio}'
 */
 const updateForm = (args: { folio: number | { id: number } } | [folio: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -221,7 +221,7 @@ const updateForm = (args: { folio: number | { id: number } } | [folio: number | 
 
 /**
 * @see \App\Http\Controllers\Catalog\FolioController::update
-* @see app/Http/Controllers/Catalog/FolioController.php:49
+* @see app/Http/Controllers/Catalog/FolioController.php:57
 * @route '/catalogs/folios/{folio}'
 */
 updateForm.put = (args: { folio: number | { id: number } } | [folio: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -236,7 +236,7 @@ updateForm.put = (args: { folio: number | { id: number } } | [folio: number | { 
 
 /**
 * @see \App\Http\Controllers\Catalog\FolioController::update
-* @see app/Http/Controllers/Catalog/FolioController.php:49
+* @see app/Http/Controllers/Catalog/FolioController.php:57
 * @route '/catalogs/folios/{folio}'
 */
 updateForm.patch = (args: { folio: number | { id: number } } | [folio: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -253,7 +253,7 @@ update.form = updateForm
 
 /**
 * @see \App\Http\Controllers\Catalog\FolioController::destroy
-* @see app/Http/Controllers/Catalog/FolioController.php:66
+* @see app/Http/Controllers/Catalog/FolioController.php:74
 * @route '/catalogs/folios/{folio}'
 */
 export const destroy = (args: { folio: number | { id: number } } | [folio: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -268,7 +268,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\Catalog\FolioController::destroy
-* @see app/Http/Controllers/Catalog/FolioController.php:66
+* @see app/Http/Controllers/Catalog/FolioController.php:74
 * @route '/catalogs/folios/{folio}'
 */
 destroy.url = (args: { folio: number | { id: number } } | [folio: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -301,7 +301,7 @@ destroy.url = (args: { folio: number | { id: number } } | [folio: number | { id:
 
 /**
 * @see \App\Http\Controllers\Catalog\FolioController::destroy
-* @see app/Http/Controllers/Catalog/FolioController.php:66
+* @see app/Http/Controllers/Catalog/FolioController.php:74
 * @route '/catalogs/folios/{folio}'
 */
 destroy.delete = (args: { folio: number | { id: number } } | [folio: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -311,7 +311,7 @@ destroy.delete = (args: { folio: number | { id: number } } | [folio: number | { 
 
 /**
 * @see \App\Http\Controllers\Catalog\FolioController::destroy
-* @see app/Http/Controllers/Catalog/FolioController.php:66
+* @see app/Http/Controllers/Catalog/FolioController.php:74
 * @route '/catalogs/folios/{folio}'
 */
 const destroyForm = (args: { folio: number | { id: number } } | [folio: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -326,7 +326,7 @@ const destroyForm = (args: { folio: number | { id: number } } | [folio: number |
 
 /**
 * @see \App\Http\Controllers\Catalog\FolioController::destroy
-* @see app/Http/Controllers/Catalog/FolioController.php:66
+* @see app/Http/Controllers/Catalog/FolioController.php:74
 * @route '/catalogs/folios/{folio}'
 */
 destroyForm.delete = (args: { folio: number | { id: number } } | [folio: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

@@ -82,7 +82,7 @@ index.form = indexForm
 
 /**
 * @see \App\Http\Controllers\Catalog\ActivityTypeController::store
-* @see app/Http/Controllers/Catalog/ActivityTypeController.php:31
+* @see app/Http/Controllers/Catalog/ActivityTypeController.php:39
 * @route '/catalogs/activities'
 */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -97,7 +97,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\Catalog\ActivityTypeController::store
-* @see app/Http/Controllers/Catalog/ActivityTypeController.php:31
+* @see app/Http/Controllers/Catalog/ActivityTypeController.php:39
 * @route '/catalogs/activities'
 */
 store.url = (options?: RouteQueryOptions) => {
@@ -106,7 +106,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Catalog\ActivityTypeController::store
-* @see app/Http/Controllers/Catalog/ActivityTypeController.php:31
+* @see app/Http/Controllers/Catalog/ActivityTypeController.php:39
 * @route '/catalogs/activities'
 */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -116,7 +116,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
 /**
 * @see \App\Http\Controllers\Catalog\ActivityTypeController::store
-* @see app/Http/Controllers/Catalog/ActivityTypeController.php:31
+* @see app/Http/Controllers/Catalog/ActivityTypeController.php:39
 * @route '/catalogs/activities'
 */
 const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -126,7 +126,7 @@ const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => 
 
 /**
 * @see \App\Http\Controllers\Catalog\ActivityTypeController::store
-* @see app/Http/Controllers/Catalog/ActivityTypeController.php:31
+* @see app/Http/Controllers/Catalog/ActivityTypeController.php:39
 * @route '/catalogs/activities'
 */
 storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -138,7 +138,7 @@ store.form = storeForm
 
 /**
 * @see \App\Http\Controllers\Catalog\ActivityTypeController::update
-* @see app/Http/Controllers/Catalog/ActivityTypeController.php:44
+* @see app/Http/Controllers/Catalog/ActivityTypeController.php:52
 * @route '/catalogs/activities/{activity}'
 */
 export const update = (args: { activity: string | number } | [activity: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -153,7 +153,7 @@ update.definition = {
 
 /**
 * @see \App\Http\Controllers\Catalog\ActivityTypeController::update
-* @see app/Http/Controllers/Catalog/ActivityTypeController.php:44
+* @see app/Http/Controllers/Catalog/ActivityTypeController.php:52
 * @route '/catalogs/activities/{activity}'
 */
 update.url = (args: { activity: string | number } | [activity: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -180,7 +180,7 @@ update.url = (args: { activity: string | number } | [activity: string | number ]
 
 /**
 * @see \App\Http\Controllers\Catalog\ActivityTypeController::update
-* @see app/Http/Controllers/Catalog/ActivityTypeController.php:44
+* @see app/Http/Controllers/Catalog/ActivityTypeController.php:52
 * @route '/catalogs/activities/{activity}'
 */
 update.put = (args: { activity: string | number } | [activity: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -190,7 +190,7 @@ update.put = (args: { activity: string | number } | [activity: string | number ]
 
 /**
 * @see \App\Http\Controllers\Catalog\ActivityTypeController::update
-* @see app/Http/Controllers/Catalog/ActivityTypeController.php:44
+* @see app/Http/Controllers/Catalog/ActivityTypeController.php:52
 * @route '/catalogs/activities/{activity}'
 */
 update.patch = (args: { activity: string | number } | [activity: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -200,7 +200,7 @@ update.patch = (args: { activity: string | number } | [activity: string | number
 
 /**
 * @see \App\Http\Controllers\Catalog\ActivityTypeController::update
-* @see app/Http/Controllers/Catalog/ActivityTypeController.php:44
+* @see app/Http/Controllers/Catalog/ActivityTypeController.php:52
 * @route '/catalogs/activities/{activity}'
 */
 const updateForm = (args: { activity: string | number } | [activity: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -215,7 +215,7 @@ const updateForm = (args: { activity: string | number } | [activity: string | nu
 
 /**
 * @see \App\Http\Controllers\Catalog\ActivityTypeController::update
-* @see app/Http/Controllers/Catalog/ActivityTypeController.php:44
+* @see app/Http/Controllers/Catalog/ActivityTypeController.php:52
 * @route '/catalogs/activities/{activity}'
 */
 updateForm.put = (args: { activity: string | number } | [activity: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -230,7 +230,7 @@ updateForm.put = (args: { activity: string | number } | [activity: string | numb
 
 /**
 * @see \App\Http\Controllers\Catalog\ActivityTypeController::update
-* @see app/Http/Controllers/Catalog/ActivityTypeController.php:44
+* @see app/Http/Controllers/Catalog/ActivityTypeController.php:52
 * @route '/catalogs/activities/{activity}'
 */
 updateForm.patch = (args: { activity: string | number } | [activity: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -247,7 +247,7 @@ update.form = updateForm
 
 /**
 * @see \App\Http\Controllers\Catalog\ActivityTypeController::destroy
-* @see app/Http/Controllers/Catalog/ActivityTypeController.php:57
+* @see app/Http/Controllers/Catalog/ActivityTypeController.php:65
 * @route '/catalogs/activities/{activity}'
 */
 export const destroy = (args: { activity: string | number } | [activity: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -262,7 +262,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\Catalog\ActivityTypeController::destroy
-* @see app/Http/Controllers/Catalog/ActivityTypeController.php:57
+* @see app/Http/Controllers/Catalog/ActivityTypeController.php:65
 * @route '/catalogs/activities/{activity}'
 */
 destroy.url = (args: { activity: string | number } | [activity: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -289,7 +289,7 @@ destroy.url = (args: { activity: string | number } | [activity: string | number 
 
 /**
 * @see \App\Http\Controllers\Catalog\ActivityTypeController::destroy
-* @see app/Http/Controllers/Catalog/ActivityTypeController.php:57
+* @see app/Http/Controllers/Catalog/ActivityTypeController.php:65
 * @route '/catalogs/activities/{activity}'
 */
 destroy.delete = (args: { activity: string | number } | [activity: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -299,7 +299,7 @@ destroy.delete = (args: { activity: string | number } | [activity: string | numb
 
 /**
 * @see \App\Http\Controllers\Catalog\ActivityTypeController::destroy
-* @see app/Http/Controllers/Catalog/ActivityTypeController.php:57
+* @see app/Http/Controllers/Catalog/ActivityTypeController.php:65
 * @route '/catalogs/activities/{activity}'
 */
 const destroyForm = (args: { activity: string | number } | [activity: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -314,7 +314,7 @@ const destroyForm = (args: { activity: string | number } | [activity: string | n
 
 /**
 * @see \App\Http\Controllers\Catalog\ActivityTypeController::destroy
-* @see app/Http/Controllers/Catalog/ActivityTypeController.php:57
+* @see app/Http/Controllers/Catalog/ActivityTypeController.php:65
 * @route '/catalogs/activities/{activity}'
 */
 destroyForm.delete = (args: { activity: string | number } | [activity: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

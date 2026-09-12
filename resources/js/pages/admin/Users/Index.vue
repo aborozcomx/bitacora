@@ -38,9 +38,19 @@ interface UserItem {
 const props = defineProps<{
     users: {
         data: UserItem[];
+        current_page?: number;
+        last_page?: number;
+        per_page?: number;
+        total?: number;
+        from?: number | null;
+        to?: number | null;
     };
     roles: Role[];
     branches: Branch[];
+    filters?: {
+        search?: string;
+        per_page?: number;
+    };
 }>();
 
 const columns: ColumnDef[] = [
@@ -160,6 +170,8 @@ const confirmDelete = () => {
         <DataTable
             :columns="columns"
             :data="userRows"
+            :pagination="users"
+            :filters="filters"
             searchPlaceholder="Buscar usuario por nombre, correo, rol..."
         >
             <template #cell-name="{ row }">

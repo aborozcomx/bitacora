@@ -73,6 +73,11 @@ class ExpenseReportController extends Controller
         $grandTotal = (clone $baseQuery)->sum('amount');
         $totalTransactions = (clone $baseQuery)->count();
 
+        $perPage = $request->integer('per_page', 15);
+        if (! in_array($perPage, [5, 10, 15, 25, 50, 100])) {
+            $perPage = 15;
+        }
+
         $expenses = (clone $baseQuery)
             ->with([
                 'bitacora.branch',
@@ -82,7 +87,7 @@ class ExpenseReportController extends Controller
                 'paymentCard',
             ])
             ->latest('id')
-            ->paginate(15)
+            ->paginate($perPage)
             ->withQueryString();
 
         $byPaymentMethod = (clone $baseQuery)
@@ -158,6 +163,7 @@ class ExpenseReportController extends Controller
                 'user_id' => $userId,
                 'payment_method_id' => $paymentMethodId,
                 'payment_card_id' => $paymentCardId,
+                'per_page' => $perPage,
             ],
             'grand_total' => round((float) $grandTotal, 2),
             'total_transactions' => $totalTransactions,

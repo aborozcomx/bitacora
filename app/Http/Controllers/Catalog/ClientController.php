@@ -14,6 +14,11 @@ class ClientController extends Controller
 {
     public function index(Request $request): Response
     {
+        $perPage = $request->integer('per_page', 10);
+        if (! in_array($perPage, [5, 10, 15, 25, 50, 100])) {
+            $perPage = 10;
+        }
+
         $clients = Client::query()
             ->with(['branches'])
             ->when($request->search, function ($query, $search) {
@@ -30,12 +35,15 @@ class ClientController extends Controller
                 });
             })
             ->latest()
-            ->paginate(10)
+            ->paginate($perPage)
             ->withQueryString();
 
         return Inertia::render('catalogs/Clients/Index', [
             'clients' => $clients,
-            'filters' => $request->only(['search']),
+            'filters' => [
+                'search' => $request->search,
+                'per_page' => $perPage,
+            ],
         ]);
     }
 

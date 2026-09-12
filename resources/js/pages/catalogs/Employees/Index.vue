@@ -37,8 +37,19 @@ interface Employee {
 const props = defineProps<{
     employees: {
         data: Employee[];
+        current_page?: number;
+        last_page?: number;
+        per_page?: number;
+        total?: number;
+        from?: number | null;
+        to?: number | null;
     };
     branches: Branch[];
+    filters?: {
+        search?: string;
+        branch_id?: string;
+        per_page?: number;
+    };
 }>();
 
 const columns: ColumnDef[] = [
@@ -155,6 +166,8 @@ const confirmDelete = () => {
         <DataTable
             :columns="columns"
             :data="employeeRows"
+            :pagination="employees"
+            :filters="filters"
             searchPlaceholder="Buscar por código, nombre, sucursal..."
         >
             <template #cell-employee_code="{ row }">

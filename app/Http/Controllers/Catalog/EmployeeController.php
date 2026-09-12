@@ -16,6 +16,11 @@ class EmployeeController extends Controller
     {
         $user = $request->user();
 
+        $perPage = $request->integer('per_page', 10);
+        if (! in_array($perPage, [5, 10, 15, 25, 50, 100])) {
+            $perPage = 10;
+        }
+
         $employees = Employee::with('branch')
             ->when(! $user->hasRole('admin'), function ($query) use ($user) {
                 $query->whereIn('branch_id', $user->branches->pluck('id'));
@@ -24,14 +29,17 @@ class EmployeeController extends Controller
                 $query->where(function ($q) use ($search) {
                     $q->where('first_name', 'like', "%{$search}%")
                         ->orWhere('last_name', 'like', "%{$search}%")
-                        ->orWhere('employee_code', 'like', "%{$search}%");
+                        ->orWhere('employee_code', 'like', "%{$search}%")
+                        ->orWhereHas('branch', function ($b) use ($search) {
+                            $b->where('name', 'like', "%{$search}%");
+                        });
                 });
             })
             ->when($request->branch_id, function ($query, $branchId) {
                 $query->where('branch_id', $branchId);
             })
             ->latest()
-            ->paginate(10)
+            ->paginate($perPage)
             ->withQueryString();
 
         $branches = $user->hasRole('admin')
@@ -41,7 +49,11 @@ class EmployeeController extends Controller
         return Inertia::render('catalogs/Employees/Index', [
             'employees' => $employees,
             'branches' => $branches,
-            'filters' => $request->only(['search', 'branch_id']),
+            'filters' => [
+                'search' => $request->search,
+                'branch_id' => $request->branch_id,
+                'per_page' => $perPage,
+            ],
         ]);
     }
 

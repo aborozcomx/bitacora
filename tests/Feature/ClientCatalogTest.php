@@ -141,3 +141,50 @@ test('admin can search clients by branch contact name or email', function () {
         ->where('clients.data.0.code', 'ALF-01')
     );
 });
+
+test('clients catalog respects per_page and pagination page parameters', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    // Create 12 clients
+    for ($i = 1; $i <= 12; $i++) {
+        Client::create([
+            'name' => "Cliente {$i}",
+            'code' => sprintf('CLI-%02d', $i),
+            'is_active' => true,
+        ]);
+    }
+
+    // Default 10 per page
+    $responseDefault = $this->actingAs($admin)->get('/catalogs/clients');
+    $responseDefault->assertOk();
+    $responseDefault->assertInertia(fn ($page) => $page
+        ->component('catalogs/Clients/Index')
+        ->has('clients.data', 10)
+        ->where('clients.total', 12)
+        ->where('clients.per_page', 10)
+        ->where('clients.current_page', 1)
+    );
+
+    // Custom per_page=5, page=2
+    $responsePerPage = $this->actingAs($admin)->get('/catalogs/clients?per_page=5&page=2');
+    $responsePerPage->assertOk();
+    $responsePerPage->assertInertia(fn ($page) => $page
+        ->component('catalogs/Clients/Index')
+        ->has('clients.data', 5)
+        ->where('clients.total', 12)
+        ->where('clients.per_page', 5)
+        ->where('clients.current_page', 2)
+        ->where('filters.per_page', 5)
+    );
+
+    // Custom per_page=25 (all 12 in page 1)
+    $responseAll = $this->actingAs($admin)->get('/catalogs/clients?per_page=25');
+    $responseAll->assertOk();
+    $responseAll->assertInertia(fn ($page) => $page
+        ->component('catalogs/Clients/Index')
+        ->has('clients.data', 12)
+        ->where('clients.total', 12)
+        ->where('clients.per_page', 25)
+    );
+});

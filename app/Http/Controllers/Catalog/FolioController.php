@@ -13,18 +13,26 @@ class FolioController extends Controller
 {
     public function index(Request $request): Response
     {
+        $perPage = $request->integer('per_page', 15);
+        if (! in_array($perPage, [5, 10, 15, 25, 50, 100])) {
+            $perPage = 15;
+        }
+
         $folios = Folio::query()
             ->when($request->search, function ($query, $search) {
                 $query->where('name', 'like', "%{$search}%")
                     ->orWhere('description', 'like', "%{$search}%");
             })
             ->orderBy('name')
-            ->paginate(15)
+            ->paginate($perPage)
             ->withQueryString();
 
         return Inertia::render('catalogs/Folios/Index', [
             'folios' => $folios,
-            'filters' => $request->only(['search']),
+            'filters' => [
+                'search' => $request->search,
+                'per_page' => $perPage,
+            ],
         ]);
     }
 

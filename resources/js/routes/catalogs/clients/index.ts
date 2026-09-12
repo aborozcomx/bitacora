@@ -83,7 +83,7 @@ index.form = indexForm
 
 /**
 * @see \App\Http\Controllers\Catalog\ClientController::store
-* @see app/Http/Controllers/Catalog/ClientController.php:34
+* @see app/Http/Controllers/Catalog/ClientController.php:50
 * @route '/catalogs/clients'
 */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -98,7 +98,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\Catalog\ClientController::store
-* @see app/Http/Controllers/Catalog/ClientController.php:34
+* @see app/Http/Controllers/Catalog/ClientController.php:50
 * @route '/catalogs/clients'
 */
 store.url = (options?: RouteQueryOptions) => {
@@ -107,7 +107,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Catalog\ClientController::store
-* @see app/Http/Controllers/Catalog/ClientController.php:34
+* @see app/Http/Controllers/Catalog/ClientController.php:50
 * @route '/catalogs/clients'
 */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -117,7 +117,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
 /**
 * @see \App\Http\Controllers\Catalog\ClientController::store
-* @see app/Http/Controllers/Catalog/ClientController.php:34
+* @see app/Http/Controllers/Catalog/ClientController.php:50
 * @route '/catalogs/clients'
 */
 const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -127,7 +127,7 @@ const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => 
 
 /**
 * @see \App\Http\Controllers\Catalog\ClientController::store
-* @see app/Http/Controllers/Catalog/ClientController.php:34
+* @see app/Http/Controllers/Catalog/ClientController.php:50
 * @route '/catalogs/clients'
 */
 storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -139,7 +139,7 @@ store.form = storeForm
 
 /**
 * @see \App\Http\Controllers\Catalog\ClientController::update
-* @see app/Http/Controllers/Catalog/ClientController.php:50
+* @see app/Http/Controllers/Catalog/ClientController.php:63
 * @route '/catalogs/clients/{client}'
 */
 export const update = (args: { client: number | { id: number } } | [client: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -154,7 +154,7 @@ update.definition = {
 
 /**
 * @see \App\Http\Controllers\Catalog\ClientController::update
-* @see app/Http/Controllers/Catalog/ClientController.php:50
+* @see app/Http/Controllers/Catalog/ClientController.php:63
 * @route '/catalogs/clients/{client}'
 */
 update.url = (args: { client: number | { id: number } } | [client: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -187,7 +187,7 @@ update.url = (args: { client: number | { id: number } } | [client: number | { id
 
 /**
 * @see \App\Http\Controllers\Catalog\ClientController::update
-* @see app/Http/Controllers/Catalog/ClientController.php:50
+* @see app/Http/Controllers/Catalog/ClientController.php:63
 * @route '/catalogs/clients/{client}'
 */
 update.put = (args: { client: number | { id: number } } | [client: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -197,7 +197,7 @@ update.put = (args: { client: number | { id: number } } | [client: number | { id
 
 /**
 * @see \App\Http\Controllers\Catalog\ClientController::update
-* @see app/Http/Controllers/Catalog/ClientController.php:50
+* @see app/Http/Controllers/Catalog/ClientController.php:63
 * @route '/catalogs/clients/{client}'
 */
 update.patch = (args: { client: number | { id: number } } | [client: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -207,7 +207,7 @@ update.patch = (args: { client: number | { id: number } } | [client: number | { 
 
 /**
 * @see \App\Http\Controllers\Catalog\ClientController::update
-* @see app/Http/Controllers/Catalog/ClientController.php:50
+* @see app/Http/Controllers/Catalog/ClientController.php:63
 * @route '/catalogs/clients/{client}'
 */
 const updateForm = (args: { client: number | { id: number } } | [client: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -222,7 +222,7 @@ const updateForm = (args: { client: number | { id: number } } | [client: number 
 
 /**
 * @see \App\Http\Controllers\Catalog\ClientController::update
-* @see app/Http/Controllers/Catalog/ClientController.php:50
+* @see app/Http/Controllers/Catalog/ClientController.php:63
 * @route '/catalogs/clients/{client}'
 */
 updateForm.put = (args: { client: number | { id: number } } | [client: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -237,7 +237,7 @@ updateForm.put = (args: { client: number | { id: number } } | [client: number | 
 
 /**
 * @see \App\Http\Controllers\Catalog\ClientController::update
-* @see app/Http/Controllers/Catalog/ClientController.php:50
+* @see app/Http/Controllers/Catalog/ClientController.php:63
 * @route '/catalogs/clients/{client}'
 */
 updateForm.patch = (args: { client: number | { id: number } } | [client: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -254,7 +254,7 @@ update.form = updateForm
 
 /**
 * @see \App\Http\Controllers\Catalog\ClientController::destroy
-* @see app/Http/Controllers/Catalog/ClientController.php:66
+* @see app/Http/Controllers/Catalog/ClientController.php:76
 * @route '/catalogs/clients/{client}'
 */
 export const destroy = (args: { client: number | { id: number } } | [client: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -269,7 +269,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\Catalog\ClientController::destroy
-* @see app/Http/Controllers/Catalog/ClientController.php:66
+* @see app/Http/Controllers/Catalog/ClientController.php:76
 * @route '/catalogs/clients/{client}'
 */
 destroy.url = (args: { client: number | { id: number } } | [client: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -302,7 +302,7 @@ destroy.url = (args: { client: number | { id: number } } | [client: number | { i
 
 /**
 * @see \App\Http\Controllers\Catalog\ClientController::destroy
-* @see app/Http/Controllers/Catalog/ClientController.php:66
+* @see app/Http/Controllers/Catalog/ClientController.php:76
 * @route '/catalogs/clients/{client}'
 */
 destroy.delete = (args: { client: number | { id: number } } | [client: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -312,7 +312,7 @@ destroy.delete = (args: { client: number | { id: number } } | [client: number | 
 
 /**
 * @see \App\Http\Controllers\Catalog\ClientController::destroy
-* @see app/Http/Controllers/Catalog/ClientController.php:66
+* @see app/Http/Controllers/Catalog/ClientController.php:76
 * @route '/catalogs/clients/{client}'
 */
 const destroyForm = (args: { client: number | { id: number } } | [client: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -327,7 +327,7 @@ const destroyForm = (args: { client: number | { id: number } } | [client: number
 
 /**
 * @see \App\Http\Controllers\Catalog\ClientController::destroy
-* @see app/Http/Controllers/Catalog/ClientController.php:66
+* @see app/Http/Controllers/Catalog/ClientController.php:76
 * @route '/catalogs/clients/{client}'
 */
 destroyForm.delete = (args: { client: number | { id: number } } | [client: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
