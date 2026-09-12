@@ -329,3 +329,253 @@ test('multiple distinct employees with 8 hours each on the same date succeed', f
 
     $response->assertRedirect("/bitacoras/{$bitacora->id}");
 });
+
+test('cannot create bitacora with a future date', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $branch = Branch::create(['name' => 'Sucursal Futura', 'code' => 'SUC-FUT', 'is_active' => true]);
+    $client = Client::create(['name' => 'Cliente Futuro', 'code' => 'CLI-FUT', 'is_active' => true]);
+
+    $futureDate = now()->addDays(2)->toDateString();
+
+    $response = $this->actingAs($admin)->post('/bitacoras', [
+        'branch_id' => $branch->id,
+        'user_id' => $admin->id,
+        'client_id' => $client->id,
+        'folio_prefix' => 'BIT',
+        'folio_consecutive' => '999',
+        'date' => $futureDate,
+    ]);
+
+    $response->assertSessionHasErrors(['date']);
+    expect(Bitacora::where('folio_number', 'BIT-999')->exists())->toBeFalse();
+});
+
+test('cannot create bitacora reusing existing folio with a different client', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $branch = Branch::create(['name' => 'Sucursal Test', 'code' => 'SUC-TST', 'is_active' => true]);
+    $client1 = Client::create(['name' => 'Cliente Uno', 'code' => 'CLI-01', 'is_active' => true]);
+    $client2 = Client::create(['name' => 'Cliente Dos', 'code' => 'CLI-02', 'is_active' => true]);
+
+    // First bitacora with client 1 on 2026-08-20
+    Bitacora::create([
+        'branch_id' => $branch->id,
+        'user_id' => $admin->id,
+        'client_id' => $client1->id,
+        'folio_prefix' => 'BIT',
+        'folio_consecutive' => '100',
+        'folio_number' => 'BIT-100',
+        'date' => '2026-08-20',
+    ]);
+
+    // Attempt to reuse BIT-100 with client 2 on a different date (2026-08-21)
+    $response = $this->actingAs($admin)->post('/bitacoras', [
+        'branch_id' => $branch->id,
+        'user_id' => $admin->id,
+        'client_id' => $client2->id,
+        'folio_prefix' => 'BIT',
+        'folio_consecutive' => '100',
+        'date' => '2026-08-21',
+    ]);
+
+    $response->assertSessionHasErrors(['client_id']);
+    expect(Bitacora::where('folio_number', 'BIT-100')->where('date', '2026-08-21')->exists())->toBeFalse();
+});
+
+test('can create bitacora reusing existing folio with the same client on a different date', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $branch = Branch::create(['name' => 'Sucursal Test', 'code' => 'SUC-TST', 'is_active' => true]);
+    $client = Client::create(['name' => 'Cliente Uno', 'code' => 'CLI-01', 'is_active' => true]);
+
+    // First bitacora on 2026-08-20
+    Bitacora::create([
+        'branch_id' => $branch->id,
+        'user_id' => $admin->id,
+        'client_id' => $client->id,
+        'folio_prefix' => 'BIT',
+        'folio_consecutive' => '101',
+        'folio_number' => 'BIT-101',
+        'date' => '2026-08-20',
+    ]);
+
+    // Reuse BIT-101 with same client on 2026-08-21
+    $response = $this->actingAs($admin)->post('/bitacoras', [
+        'branch_id' => $branch->id,
+        'user_id' => $admin->id,
+        'client_id' => $client->id,
+        'folio_prefix' => 'BIT',
+        'folio_consecutive' => '101',
+        'date' => '2026-08-21',
+    ]);
+
+    $secondBitacora = Bitacora::where('folio_number', 'BIT-101')->where('date', '2026-08-21')->first();
+    expect($secondBitacora)->not->toBeNull();
+    $response->assertRedirect("/bitacoras/{$secondBitacora->id}/edit");
+});
+
+test('cannot update bitacora with a future date or future activity date', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $branch = Branch::create(['name' => 'Sucursal Test', 'code' => 'SUC-TST', 'is_active' => true]);
+    $client = Client::create(['name' => 'Cliente Test', 'code' => 'CLI-01', 'is_active' => true]);
+
+    $bitacora = Bitacora::create([
+        'branch_id' => $branch->id,
+        'user_id' => $admin->id,
+        'client_id' => $client->id,
+        'folio_number' => 'BIT-FUT-UPD',
+        'date' => '2026-08-20',
+    ]);
+
+    $futureDate = now()->addDays(5)->toDateString();
+
+    // 1. Future bitacora date
+    $response = $this->actingAs($admin)->put("/bitacoras/{$bitacora->id}", [
+        'date' => $futureDate,
+        'activities' => [
+            [
+                'date' => '2026-08-20',
+                'description' => 'Actividad normal',
+            ],
+        ],
+    ]);
+    $response->assertSessionHasErrors(['date']);
+
+    // 2. Future activity date
+    $response = $this->actingAs($admin)->put("/bitacoras/{$bitacora->id}", [
+        'date' => '2026-08-20',
+        'activities' => [
+            [
+                'date' => $futureDate,
+                'description' => 'Actividad en el futuro',
+            ],
+        ],
+    ]);
+    $response->assertSessionHasErrors(['activities.0.date']);
+});
+
+test('cannot change client in bitacora update if folio is shared across sibling bitacoras', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $branch = Branch::create(['name' => 'Sucursal Test', 'code' => 'SUC-TST', 'is_active' => true]);
+    $client1 = Client::create(['name' => 'Cliente Original', 'code' => 'CLI-ORIG', 'is_active' => true]);
+    $client2 = Client::create(['name' => 'Cliente Nuevo', 'code' => 'CLI-NEW', 'is_active' => true]);
+
+    // Two sibling bitacoras with same folio BIT-SHARED
+    $bitacora1 = Bitacora::create([
+        'branch_id' => $branch->id,
+        'user_id' => $admin->id,
+        'client_id' => $client1->id,
+        'folio_number' => 'BIT-SHARED',
+        'date' => '2026-08-20',
+    ]);
+
+    $bitacora2 = Bitacora::create([
+        'branch_id' => $branch->id,
+        'user_id' => $admin->id,
+        'client_id' => $client1->id,
+        'folio_number' => 'BIT-SHARED',
+        'date' => '2026-08-21',
+    ]);
+
+    // Try to change client on bitacora1
+    $response = $this->actingAs($admin)->put("/bitacoras/{$bitacora1->id}", [
+        'client_id' => $client2->id,
+        'date' => '2026-08-20',
+        'activities' => [
+            [
+                'date' => '2026-08-20',
+                'description' => 'Actividad de prueba',
+            ],
+        ],
+    ]);
+
+    $response->assertSessionHasErrors(['client_id']);
+    expect($bitacora1->fresh()->client_id)->toBe($client1->id);
+});
+
+test('cannot create bitacora reusing existing folio with a different client branch', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $branch = Branch::create(['name' => 'Sucursal Test', 'code' => 'SUC-TST', 'is_active' => true]);
+    $client = Client::create(['name' => 'Cliente Con Sucursales', 'code' => 'CLI-SUC', 'is_active' => true]);
+    $cb1 = ClientBranch::create(['client_id' => $client->id, 'name' => 'Planta Norte', 'code' => 'PN', 'is_active' => true]);
+    $cb2 = ClientBranch::create(['client_id' => $client->id, 'name' => 'Planta Sur', 'code' => 'PS', 'is_active' => true]);
+
+    Bitacora::create([
+        'branch_id' => $branch->id,
+        'user_id' => $admin->id,
+        'client_id' => $client->id,
+        'client_branch_id' => $cb1->id,
+        'folio_prefix' => 'BIT',
+        'folio_consecutive' => '200',
+        'folio_number' => 'BIT-200',
+        'date' => '2026-08-20',
+    ]);
+
+    // Attempt to reuse BIT-200 on another date (2026-08-21) with a different client branch ($cb2)
+    $response = $this->actingAs($admin)->post('/bitacoras', [
+        'branch_id' => $branch->id,
+        'user_id' => $admin->id,
+        'client_id' => $client->id,
+        'client_branch_id' => $cb2->id,
+        'folio_prefix' => 'BIT',
+        'folio_consecutive' => '200',
+        'date' => '2026-08-21',
+    ]);
+
+    $response->assertSessionHasErrors(['client_branch_id']);
+    expect(Bitacora::where('folio_number', 'BIT-200')->where('date', '2026-08-21')->exists())->toBeFalse();
+});
+
+test('cannot change client branch in bitacora update if folio is shared across sibling bitacoras', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $branch = Branch::create(['name' => 'Sucursal Test', 'code' => 'SUC-TST', 'is_active' => true]);
+    $client = Client::create(['name' => 'Cliente Con Sucursales', 'code' => 'CLI-SUC', 'is_active' => true]);
+    $cb1 = ClientBranch::create(['client_id' => $client->id, 'name' => 'Planta Norte', 'code' => 'PN', 'is_active' => true]);
+    $cb2 = ClientBranch::create(['client_id' => $client->id, 'name' => 'Planta Sur', 'code' => 'PS', 'is_active' => true]);
+
+    $bitacora1 = Bitacora::create([
+        'branch_id' => $branch->id,
+        'user_id' => $admin->id,
+        'client_id' => $client->id,
+        'client_branch_id' => $cb1->id,
+        'folio_number' => 'BIT-BRANCH-SHARED',
+        'date' => '2026-08-20',
+    ]);
+
+    $bitacora2 = Bitacora::create([
+        'branch_id' => $branch->id,
+        'user_id' => $admin->id,
+        'client_id' => $client->id,
+        'client_branch_id' => $cb1->id,
+        'folio_number' => 'BIT-BRANCH-SHARED',
+        'date' => '2026-08-21',
+    ]);
+
+    // Attempt to change client branch on bitacora1
+    $response = $this->actingAs($admin)->put("/bitacoras/{$bitacora1->id}", [
+        'client_id' => $client->id,
+        'client_branch_id' => $cb2->id,
+        'date' => '2026-08-20',
+        'activities' => [
+            [
+                'date' => '2026-08-20',
+                'description' => 'Actividad de prueba',
+            ],
+        ],
+    ]);
+
+    $response->assertSessionHasErrors(['client_branch_id']);
+    expect($bitacora1->fresh()->client_branch_id)->toBe($cb1->id);
+});

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,11 +24,15 @@ import {
     Clock,
     CheckCircle2,
     ShieldAlert,
-    FileText
+    FileText,
+    Lock,
+    Pencil,
+    ChevronDown,
+    ChevronUp
 } from '@lucide/vue';
 
-interface Branch { id: number; name: string; }
-interface User { id: number; name: string; email: string; }
+interface Branch { id: number; name: string; code?: string; }
+interface User { id: number; name: string; email: string; branches?: Branch[]; }
 interface ClientBranch { id: number; name: string; code: string | null; }
 interface Client { id: number; name: string; code: string; branches: ClientBranch[]; }
 interface ActivityType { id: number; name: string; }
@@ -91,7 +95,7 @@ const props = defineProps<{
         folio_consecutive: string | null;
         date: string;
         notes: string | null;
-        branch?: { name: string };
+        branch?: { name: string; code?: string };
         user?: { name: string; email: string };
         client?: { name: string; code: string };
         client_branch?: { name: string; code: string | null };
@@ -111,17 +115,19 @@ const props = defineProps<{
         hours_worked: number;
         folio_number: string;
     }>;
+    hasSiblingBitacoras?: boolean;
     isAdmin: boolean;
 }>();
 
 const today = new Date().toISOString().substring(0, 10);
+const showGeneralDataEdit = ref(false);
 
 // Initialize activities structure from props
 const initialActivities: ActivityForm[] = (props.bitacora.activities && props.bitacora.activities.length > 0)
     ? props.bitacora.activities.map(act => ({
         id: act.id,
         activity_type_id: act.activity_type_id || '',
-        date: act.date || props.bitacora.date || today,
+        date: act.date ? (typeof act.date === 'string' ? act.date.substring(0, 10) : act.date) : (props.bitacora.date ? props.bitacora.date.substring(0, 10) : today),
         description: act.description || '',
         employees: (act.employees || []).map((emp: any) => ({
             id: emp.id,
@@ -144,7 +150,7 @@ const initialActivities: ActivityForm[] = (props.bitacora.activities && props.bi
     }))
     : [{
         activity_type_id: '',
-        date: props.bitacora.date || today,
+        date: props.bitacora.date ? props.bitacora.date.substring(0, 10) : today,
         description: '',
         employees: [],
         expenses: [],
@@ -158,9 +164,53 @@ const form = useForm({
     folio_prefix: props.bitacora.folio_prefix || '',
     folio_consecutive: props.bitacora.folio_consecutive || '',
     folio_number: props.bitacora.folio_number || '',
-    date: props.bitacora.date || today,
+    date: props.bitacora.date ? props.bitacora.date.substring(0, 10) : today,
     notes: props.bitacora.notes || '',
     activities: initialActivities,
+});
+
+// Branch in function of selected user
+const selectedUser = computed(() => {
+    return props.users.find(u => u.id === Number(form.user_id));
+});
+
+const availableBranches = computed(() => {
+    if (selectedUser.value && selectedUser.value.branches && selectedUser.value.branches.length > 0) {
+        return selectedUser.value.branches;
+    }
+    return props.branches;
+});
+
+watch(() => form.user_id, (newUserId) => {
+    if (!newUserId) return;
+    const user = props.users.find(u => u.id === Number(newUserId));
+    if (user && user.branches && user.branches.length > 0) {
+        const hasCurrentBranch = user.branches.some(b => b.id === Number(form.branch_id));
+        if (!hasCurrentBranch) {
+            form.branch_id = user.branches[0].id;
+        }
+    }
+});
+
+// Client and client branches
+const selectedClient = computed(() => {
+    return props.clients.find(c => c.id === Number(form.client_id));
+});
+
+const availableClientBranches = computed(() => {
+    if (!selectedClient.value || !selectedClient.value.branches) return [];
+    return selectedClient.value.branches;
+});
+
+const onClientChange = () => {
+    if (props.hasSiblingBitacoras) return;
+    form.client_branch_id = '';
+};
+
+// Date validation: no future dates allowed
+const hasFutureDates = computed(() => {
+    if (form.date && form.date > today) return true;
+    return form.activities.some(act => act.date && act.date > today);
 });
 
 // Helper for date evaluation
@@ -184,12 +234,13 @@ const getMaxHoursForDate = (dateStr: string): number => {
 const addActivity = () => {
     form.activities.push({
         activity_type_id: '',
-        date: form.date || today,
+        date: (form.date && form.date <= today) ? form.date : today,
         description: '',
         employees: [],
         expenses: [],
     });
 };
+
 
 const removeActivity = (index: number) => {
     if (form.activities.length > 1) {
@@ -382,6 +433,7 @@ const formatCurrency = (val: number) => {
 };
 
 const submit = () => {
+    if (hasFutureDates.value || hasHoursValidationErrors.value) return;
     form.put(`/bitacoras/${props.bitacora.id}`);
 };
 </script>
@@ -423,28 +475,191 @@ const submit = () => {
             </div>
         </div>
 
-        <!-- General Info Banner -->
+        <!-- General Info & Configuration Card -->
         <div class="bg-white dark:bg-zinc-900 p-4 sm:p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-4">
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs sm:text-sm">
+            <div class="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
+                <div class="flex items-center gap-2">
+                    <FileText class="h-4 w-4 text-indigo-600" />
+                    <span class="text-xs font-bold uppercase text-zinc-700 dark:text-zinc-300">
+                        Datos Generales de la Bitácora
+                    </span>
+                    <Badge v-if="hasSiblingBitacoras" class="bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 text-[10px] gap-1 py-0.5 px-2">
+                        <Lock class="h-3 w-3" /> Folio Compartido (Cliente Bloqueado)
+                    </Badge>
+                </div>
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    @click="showGeneralDataEdit = !showGeneralDataEdit"
+                    class="h-7 text-xs text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 rounded-lg gap-1.5"
+                >
+                    <Pencil class="h-3.5 w-3.5" />
+                    {{ showGeneralDataEdit ? 'Ocultar Edición General' : 'Modificar Datos Generales' }}
+                    <ChevronUp v-if="showGeneralDataEdit" class="h-3.5 w-3.5 ml-0.5" />
+                    <ChevronDown v-else class="h-3.5 w-3.5 ml-0.5" />
+                </Button>
+            </div>
+
+            <!-- Read-only Summary View -->
+            <div v-if="!showGeneralDataEdit" class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs sm:text-sm">
                 <div>
                     <span class="text-zinc-400 block text-[11px] font-semibold uppercase">Cliente</span>
-                    <span class="font-bold text-zinc-900 dark:text-zinc-100">{{ bitacora.client?.name || 'Cliente General' }}</span>
+                    <span class="font-bold text-zinc-900 dark:text-zinc-100">{{ selectedClient?.name || bitacora.client?.name || 'Cliente General' }}</span>
                     <span class="text-zinc-400 block text-[11px] mt-0.5">
-                        Sucursal: {{ bitacora.client_branch?.name || bitacora.clientBranch?.name || 'No Aplica / Matriz' }}
+                        Sucursal: {{ (availableClientBranches.find(b => b.id === Number(form.client_branch_id))?.name) || bitacora.client_branch?.name || bitacora.clientBranch?.name || 'No Aplica / Matriz' }}
                     </span>
                 </div>
                 <div>
                     <span class="text-zinc-400 block text-[11px] font-semibold uppercase">Encargado Responsable</span>
-                    <span class="font-bold text-zinc-900 dark:text-zinc-100">{{ bitacora.user?.name || 'No asignado' }}</span>
-                    <span class="text-zinc-400 block text-[11px] mt-0.5">{{ bitacora.user?.email }}</span>
+                    <span class="font-bold text-zinc-900 dark:text-zinc-100">{{ selectedUser?.name || bitacora.user?.name || 'No asignado' }}</span>
+                    <span class="text-zinc-400 block text-[11px] mt-0.5">{{ selectedUser?.email || bitacora.user?.email }}</span>
                 </div>
                 <div>
-                    <span class="text-zinc-400 block text-[11px] font-semibold uppercase">Fecha Registro</span>
-                    <span class="font-semibold text-zinc-800 dark:text-zinc-200 font-mono">{{ bitacora.date }}</span>
+                    <span class="text-zinc-400 block text-[11px] font-semibold uppercase">Sucursal Operativa</span>
+                    <span class="font-bold text-zinc-900 dark:text-zinc-100">{{ (availableBranches.find(b => b.id === Number(form.branch_id))?.name) || bitacora.branch?.name }}</span>
+                    <span class="text-zinc-400 block text-[11px] mt-0.5 font-mono">Fecha: {{ form.date }}</span>
                 </div>
                 <div>
                     <span class="text-zinc-400 block text-[11px] font-semibold uppercase">Total Actividades</span>
                     <span class="font-bold text-indigo-600 dark:text-indigo-400">{{ form.activities.length }} actividad(es)</span>
+                </div>
+            </div>
+
+            <!-- Editable Fields View -->
+            <div v-else class="space-y-4 pt-1">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <!-- Fecha de la bitacora -->
+                    <div class="space-y-1.5">
+                        <Label for="edit_date" class="text-xs font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
+                            <Calendar class="h-4 w-4 text-indigo-600" />
+                            Fecha de la Bitácora *
+                        </Label>
+                        <Input
+                            id="edit_date"
+                            type="date"
+                            v-model="form.date"
+                            :max="today"
+                            required
+                            class="h-9 rounded-xl text-xs"
+                            :class="form.date > today ? 'border-red-500 focus:ring-red-500' : ''"
+                        />
+                        <span v-if="form.date > today" class="text-[11px] text-red-500 font-semibold block">
+                            No se permiten fechas posteriores a hoy ({{ today }}).
+                        </span>
+                    </div>
+
+                    <!-- Usuario Encargado -->
+                    <div class="space-y-1.5">
+                        <Label for="edit_user_id" class="text-xs font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
+                            <UserCheck class="h-4 w-4 text-indigo-600" />
+                            Usuario Responsable *
+                        </Label>
+                        <select
+                            id="edit_user_id"
+                            v-model="form.user_id"
+                            required
+                            class="w-full h-9 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 text-xs focus:ring-2 focus:ring-indigo-500"
+                        >
+                            <option v-for="u in users" :key="u.id" :value="u.id">
+                                {{ u.name }} ({{ u.email }})
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Sucursal Operativa ICC (filtrada por usuario) -->
+                    <div class="space-y-1.5">
+                        <Label for="edit_branch_id" class="text-xs font-semibold text-zinc-700 dark:text-zinc-300 flex items-center justify-between">
+                            <span class="flex items-center gap-1.5">
+                                <Building2 class="h-4 w-4 text-indigo-600" />
+                                Sucursal Operativa *
+                            </span>
+                            <span v-if="selectedUser?.branches?.length" class="text-[10px] text-indigo-600">
+                                Según usuario
+                            </span>
+                        </Label>
+                        <select
+                            id="edit_branch_id"
+                            v-model="form.branch_id"
+                            required
+                            class="w-full h-9 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 text-xs focus:ring-2 focus:ring-indigo-500"
+                        >
+                            <option v-for="b in availableBranches" :key="b.id" :value="b.id">
+                                {{ b.name }} {{ b.code ? `(${b.code})` : '' }}
+                            </option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                    <!-- Cliente Selector (Locked if hasSiblingBitacoras) -->
+                    <div class="space-y-1.5">
+                        <Label class="text-xs font-semibold text-zinc-700 dark:text-zinc-300 flex items-center justify-between">
+                            <span class="flex items-center gap-1.5">
+                                <Users class="h-4 w-4 text-indigo-600" />
+                                Cliente / Razón Social *
+                            </span>
+                            <span v-if="hasSiblingBitacoras" class="text-[10px] text-amber-600 font-semibold flex items-center gap-1">
+                                <Lock class="h-3 w-3" /> Bloqueado (folio compartido)
+                            </span>
+                        </Label>
+
+                        <div v-if="hasSiblingBitacoras" class="p-2.5 bg-zinc-100 dark:bg-zinc-800/60 rounded-xl border border-zinc-200 dark:border-zinc-700 flex items-center justify-between text-xs">
+                            <div>
+                                <span class="font-bold text-zinc-900 dark:text-zinc-100 block">
+                                    [{{ selectedClient?.code }}] {{ selectedClient?.name }}
+                                </span>
+                                <span class="text-[10px] text-zinc-500">Este folio tiene registros en otras fechas y no puede cambiarse de cliente.</span>
+                            </div>
+                            <Lock class="h-4 w-4 text-zinc-400 shrink-0" />
+                        </div>
+
+                        <select
+                            v-else
+                            v-model="form.client_id"
+                            @change="onClientChange"
+                            required
+                            class="w-full h-9 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 text-xs focus:ring-2 focus:ring-indigo-500"
+                        >
+                            <option v-for="c in clients" :key="c.id" :value="c.id">
+                                [{{ c.code }}] {{ c.name }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Sucursal del Cliente -->
+                    <div class="space-y-1.5">
+                        <Label class="text-xs font-semibold text-zinc-700 dark:text-zinc-300 flex items-center justify-between">
+                            <span class="flex items-center gap-1.5">
+                                <Building2 class="h-4 w-4 text-indigo-600" />
+                                Sucursal del Cliente
+                            </span>
+                            <span v-if="hasSiblingBitacoras" class="text-[10px] text-amber-600 font-semibold flex items-center gap-1">
+                                <Lock class="h-3 w-3" /> Bloqueado
+                            </span>
+                        </Label>
+
+                        <div v-if="hasSiblingBitacoras" class="p-2.5 bg-zinc-100 dark:bg-zinc-800/60 rounded-xl border border-zinc-200 dark:border-zinc-700 flex items-center justify-between text-xs">
+                            <div>
+                                <span class="font-bold text-zinc-900 dark:text-zinc-100 block">
+                                    {{ (availableClientBranches.find(b => b.id === Number(form.client_branch_id))?.name) || '• No Aplica (Cliente General / Matriz Única)' }}
+                                </span>
+                                <span class="text-[10px] text-zinc-500">Sucursal fijada por el folio compartido.</span>
+                            </div>
+                            <Lock class="h-4 w-4 text-zinc-400 shrink-0" />
+                        </div>
+
+                        <select
+                            v-else
+                            v-model="form.client_branch_id"
+                            class="w-full h-9 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 text-xs focus:ring-2 focus:ring-indigo-500"
+                        >
+                            <option value="">• No Aplica (Cliente General / Matriz Única)</option>
+                            <option v-for="cb in availableClientBranches" :key="cb.id" :value="cb.id">
+                                {{ cb.name }} {{ cb.code ? `(${cb.code})` : '' }}
+                            </option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -457,6 +672,15 @@ const submit = () => {
                 <p v-else class="text-zinc-400 text-xs italic mt-1">
                     Sin observaciones registradas.
                 </p>
+            </div>
+        </div>
+
+        <!-- Future Dates Validation Error Banner -->
+        <div v-if="hasFutureDates" class="bg-red-50 dark:bg-red-950/50 border-2 border-red-300 dark:border-red-800 p-4 rounded-xl flex items-center gap-3 text-red-800 dark:text-red-300 text-xs sm:text-sm">
+            <ShieldAlert class="h-5 w-5 text-red-600 shrink-0" />
+            <div>
+                <span class="font-bold block">Fechas posteriores no permitidas</span>
+                La fecha de la bitácora o de una o más actividades excede la fecha de hoy ({{ today }}). Por favor ajusta las fechas a hoy o una fecha pasada para poder guardar.
             </div>
         </div>
 
@@ -528,13 +752,18 @@ const submit = () => {
                         <div class="flex items-center gap-3">
                             <!-- Activity Date in Header Row -->
                             <div class="flex items-center gap-2">
-                                <div class="w-36">
+                                <div class="w-40">
                                     <Input
                                         type="date"
                                         v-model="act.date"
+                                        :max="today"
                                         required
                                         class="h-8 text-xs rounded-lg font-mono"
+                                        :class="act.date > today ? 'border-red-500 text-red-600 focus:ring-red-500' : ''"
                                     />
+                                    <span v-if="act.date > today" class="text-[10px] text-red-500 font-semibold block mt-0.5">
+                                        Fecha posterior no permitida
+                                    </span>
                                 </div>
                             </div>
 
@@ -882,11 +1111,13 @@ const submit = () => {
                     </Link>
                     <Button
                         type="submit"
-                        :disabled="form.processing || hasHoursValidationErrors"
-                        class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow px-6 text-xs flex items-center justify-center gap-2"
+                        :disabled="form.processing || hasHoursValidationErrors || hasFutureDates"
+                        class="w-full sm:w-auto rounded-xl shadow px-6 text-xs flex items-center justify-center gap-2 transition"
+                        :class="hasHoursValidationErrors || hasFutureDates ? 'bg-red-600 hover:bg-red-700 text-white cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 text-white'"
                     >
-                        <Save class="h-4 w-4" />
-                        {{ form.processing ? 'Guardando Cambios...' : 'Guardar y Finalizar' }}
+                        <ShieldAlert v-if="hasHoursValidationErrors || hasFutureDates" class="h-4 w-4" />
+                        <Save v-else class="h-4 w-4" />
+                        {{ form.processing ? 'Guardando Cambios...' : (hasFutureDates ? 'Fechas Futuras No Permitidas' : (hasHoursValidationErrors ? 'Límite de Horas Excedido' : 'Guardar y Finalizar')) }}
                     </Button>
                 </div>
             </div>

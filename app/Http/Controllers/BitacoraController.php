@@ -100,6 +100,7 @@ class BitacoraController extends Controller
         $user = $request->user();
         $branches = Branch::where('is_active', true)->get();
         $users = User::query()
+            ->with(['branches' => fn ($q) => $q->where('is_active', true)->select('branches.id', 'branches.name', 'branches.code')])
             ->orderBy('name')
             ->get(['id', 'name', 'email']);
 
@@ -112,18 +113,25 @@ class BitacoraController extends Controller
         $suggestedPrefix = $defaultFolio ? $defaultFolio->name : 'BIT';
         $suggestedConsecutive = (string) (($defaultFolio ? $defaultFolio->current_consecutive : 0) + 1);
 
-        $existingBitacoraFolios = Bitacora::select('folio_prefix', 'folio_consecutive', 'folio_number')
-            ->distinct()
-            ->orderBy('folio_prefix')
-            ->orderBy('folio_consecutive')
-            ->get();
+        $existingBitacoraFolios = Bitacora::with(['client:id,name,code', 'clientBranch:id,name,code'])
+            ->select('folio_prefix', 'folio_consecutive', 'folio_number', 'client_id', 'client_branch_id', 'branch_id')
+            ->get()
+            ->unique('folio_number')
+            ->values();
 
-        $existingBitacoras = Bitacora::select('folio_prefix', 'folio_consecutive', 'folio_number', 'date')
+        $existingBitacoras = Bitacora::with(['client:id,name,code', 'clientBranch:id,name,code'])
+            ->select('folio_prefix', 'folio_consecutive', 'folio_number', 'client_id', 'client_branch_id', 'branch_id', 'date')
             ->get()
             ->map(fn ($b) => [
                 'folio_prefix' => $b->folio_prefix,
                 'folio_consecutive' => (string) $b->folio_consecutive,
                 'folio_number' => $b->folio_number,
+                'client_id' => $b->client_id,
+                'client_branch_id' => $b->client_branch_id,
+                'client_name' => $b->client?->name,
+                'client_code' => $b->client?->code,
+                'client_branch_name' => $b->clientBranch?->name,
+                'branch_id' => $b->branch_id,
                 'date' => is_string($b->date) ? substr($b->date, 0, 10) : $b->date->format('Y-m-d'),
             ]);
 
@@ -158,12 +166,13 @@ class BitacoraController extends Controller
             'client_branch_id' => 'nullable|exists:client_branches,id',
             'folio_prefix' => 'required|string|max:20',
             'folio_consecutive' => 'required|max:50',
-            'date' => 'required|date',
+            'date' => 'required|date|before_or_equal:today',
             'notes' => 'nullable|string',
         ], [
             'folio_prefix.required' => 'La serie de folio es obligatoria.',
             'folio_consecutive.required' => 'El número consecutivo es obligatorio.',
             'date.required' => 'La fecha es obligatoria.',
+            'date.before_or_equal' => 'La fecha de la bitácora no puede ser posterior a la fecha actual.',
         ]);
 
         $prefix = trim($validated['folio_prefix']);
@@ -179,6 +188,26 @@ class BitacoraController extends Controller
             throw ValidationException::withMessages([
                 'folio_consecutive' => "Ya existe una bitácora con el folio '{$folioNumber}' para la fecha {$validated['date']}. Para reutilizar este folio, la fecha debe ser diferente.",
             ]);
+        }
+
+        // When reusing an existing folio, the client and client branch must match the existing folio
+        $existingWithFolio = Bitacora::where('folio_number', $folioNumber)->with(['client', 'clientBranch'])->first();
+        if ($existingWithFolio) {
+            if ($existingWithFolio->client_id != $validated['client_id']) {
+                $existingClientName = $existingWithFolio->client?->name ?? 'el cliente previo';
+                throw ValidationException::withMessages([
+                    'client_id' => "El folio '{$folioNumber}' ya está determinado para el cliente '{$existingClientName}'. No se puede asignar un cliente diferente.",
+                ]);
+            }
+
+            $submittedClientBranchId = ! empty($validated['client_branch_id']) ? (int) $validated['client_branch_id'] : null;
+            $existingClientBranchId = $existingWithFolio->client_branch_id ? (int) $existingWithFolio->client_branch_id : null;
+            if ($submittedClientBranchId !== $existingClientBranchId) {
+                $existingBranchName = $existingWithFolio->clientBranch?->name ?? 'No Aplica / Matriz';
+                throw ValidationException::withMessages([
+                    'client_branch_id' => "El folio '{$folioNumber}' ya está determinado para la sucursal '{$existingBranchName}'. No se puede cambiar la sucursal del cliente para un folio existente.",
+                ]);
+            }
         }
 
         $bitacora = Bitacora::create([
@@ -250,6 +279,7 @@ class BitacoraController extends Controller
                 : Branch::where('is_active', true)->get());
 
         $users = User::query()
+            ->with(['branches' => fn ($q) => $q->where('is_active', true)->select('branches.id', 'branches.name', 'branches.code')])
             ->orderBy('name')
             ->get(['id', 'name', 'email']);
 
@@ -282,6 +312,10 @@ class BitacoraController extends Controller
             ->filter(fn ($item) => ! empty($item['date']))
             ->values();
 
+        $hasSiblingBitacoras = Bitacora::where('folio_number', $bitacora->folio_number)
+            ->where('id', '!=', $bitacora->id)
+            ->exists();
+
         return Inertia::render('bitacoras/Edit', [
             'bitacora' => $bitacora,
             'branches' => $branches,
@@ -294,6 +328,7 @@ class BitacoraController extends Controller
             'paymentCards' => $paymentCards,
             'externalEmployeeHours' => $externalEmployeeHours,
             'isAdmin' => $user->hasRole('admin'),
+            'hasSiblingBitacoras' => $hasSiblingBitacoras,
         ]);
     }
 
@@ -339,8 +374,6 @@ class BitacoraController extends Controller
                         $baseRate = (float) $employee->base_hourly_rate;
                         $overtimeRate = (float) $employee->overtime_hourly_rate;
 
-                        $totalEarned = ($hoursWorked * $baseRate) + ($overtimeHours * $overtimeRate);
-
                         $bitacora->employees()->create([
                             'bitacora_activity_id' => $activity->id,
                             'employee_id' => $employee->id,
@@ -352,7 +385,7 @@ class BitacoraController extends Controller
                             'overtime_hours' => $overtimeHours,
                             'base_rate_applied' => $baseRate,
                             'overtime_rate_applied' => $overtimeRate,
-                            'total_earned' => $totalEarned,
+                            'total_earned' => ($hoursWorked * $baseRate) + ($overtimeHours * $overtimeRate),
                         ]);
                     }
                 }
@@ -400,13 +433,13 @@ class BitacoraController extends Controller
             'folio_prefix' => 'nullable|string|max:20',
             'folio_consecutive' => 'nullable|max:50',
             'folio_number' => 'nullable|string|max:100',
-            'date' => 'nullable|date',
+            'date' => 'nullable|date|before_or_equal:today',
             'notes' => 'nullable|string',
 
             // Activities
             'activities' => 'required|array|min:1',
             'activities.*.id' => 'nullable|integer',
-            'activities.*.date' => 'required|date',
+            'activities.*.date' => 'required|date|before_or_equal:today',
             'activities.*.activity_type_id' => 'nullable|exists:activity_types,id',
             'activities.*.description' => 'required|string',
 
@@ -428,6 +461,9 @@ class BitacoraController extends Controller
             'activities.*.expenses.*.payment_card_id' => 'nullable|exists:payment_cards,id',
             'activities.*.expenses.*.reference_number' => 'nullable|string|max:255',
             'activities.*.expenses.*.notes' => 'nullable|string',
+        ], [
+            'date.before_or_equal' => 'La fecha de la bitácora no puede ser posterior a la fecha actual.',
+            'activities.*.date.before_or_equal' => 'La fecha de la actividad no puede ser posterior a la fecha actual.',
         ]);
 
         // If prefix and consecutive provided, generate folio_number
@@ -448,6 +484,35 @@ class BitacoraController extends Controller
                 throw ValidationException::withMessages([
                     'folio_consecutive' => "Ya existe otra bitácora con el folio '{$checkFolioNumber}' para la fecha {$checkDate}. Para reutilizar este folio, la fecha debe ser diferente.",
                 ]);
+            }
+        }
+
+        // When reusing an existing folio across multiple dates, client and client branch cannot be changed
+        if ($checkFolioNumber) {
+            $existingOtherBitacora = Bitacora::where('folio_number', $checkFolioNumber)
+                ->where('id', '!=', $bitacora->id)
+                ->with(['client', 'clientBranch'])
+                ->first();
+
+            if ($existingOtherBitacora) {
+                $targetClientId = $validated['client_id'] ?? $bitacora->client_id;
+                if ($targetClientId != $existingOtherBitacora->client_id) {
+                    $existingClientName = $existingOtherBitacora->client?->name ?? 'el cliente original';
+                    throw ValidationException::withMessages([
+                        'client_id' => "El folio '{$checkFolioNumber}' ya está determinado para el cliente '{$existingClientName}'. No se puede cambiar de cliente para un folio existente.",
+                    ]);
+                }
+
+                if (array_key_exists('client_branch_id', $validated)) {
+                    $targetClientBranchId = ! empty($validated['client_branch_id']) ? (int) $validated['client_branch_id'] : null;
+                    $existingClientBranchId = $existingOtherBitacora->client_branch_id ? (int) $existingOtherBitacora->client_branch_id : null;
+                    if ($targetClientBranchId !== $existingClientBranchId) {
+                        $existingBranchName = $existingOtherBitacora->clientBranch?->name ?? 'No Aplica / Matriz';
+                        throw ValidationException::withMessages([
+                            'client_branch_id' => "El folio '{$checkFolioNumber}' ya está determinado para la sucursal de cliente '{$existingBranchName}'. No se puede cambiar la sucursal del cliente para un folio existente.",
+                        ]);
+                    }
+                }
             }
         }
 
