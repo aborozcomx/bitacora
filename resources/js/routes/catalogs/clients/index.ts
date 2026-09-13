@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../wayfinder'
 import branches from './branches'
 /**
 * @see \App\Http\Controllers\Catalog\ClientController::index
@@ -45,43 +45,6 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\Catalog\ClientController::index
-* @see app/Http/Controllers/Catalog/ClientController.php:15
-* @route '/catalogs/clients'
-*/
-const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-    action: index.url(options),
-    method: 'get',
-})
-
-/**
-* @see \App\Http\Controllers\Catalog\ClientController::index
-* @see app/Http/Controllers/Catalog/ClientController.php:15
-* @route '/catalogs/clients'
-*/
-indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-    action: index.url(options),
-    method: 'get',
-})
-
-/**
-* @see \App\Http\Controllers\Catalog\ClientController::index
-* @see app/Http/Controllers/Catalog/ClientController.php:15
-* @route '/catalogs/clients'
-*/
-indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-    action: index.url({
-        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-            _method: 'HEAD',
-            ...(options?.query ?? options?.mergeQuery ?? {}),
-        }
-    }),
-    method: 'get',
-})
-
-index.form = indexForm
-
-/**
 * @see \App\Http\Controllers\Catalog\ClientController::store
 * @see app/Http/Controllers/Catalog/ClientController.php:50
 * @route '/catalogs/clients'
@@ -114,28 +77,6 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: store.url(options),
     method: 'post',
 })
-
-/**
-* @see \App\Http\Controllers\Catalog\ClientController::store
-* @see app/Http/Controllers/Catalog/ClientController.php:50
-* @route '/catalogs/clients'
-*/
-const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-    action: store.url(options),
-    method: 'post',
-})
-
-/**
-* @see \App\Http\Controllers\Catalog\ClientController::store
-* @see app/Http/Controllers/Catalog/ClientController.php:50
-* @route '/catalogs/clients'
-*/
-storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-    action: store.url(options),
-    method: 'post',
-})
-
-store.form = storeForm
 
 /**
 * @see \App\Http\Controllers\Catalog\ClientController::update
@@ -206,53 +147,6 @@ update.patch = (args: { client: number | { id: number } } | [client: number | { 
 })
 
 /**
-* @see \App\Http\Controllers\Catalog\ClientController::update
-* @see app/Http/Controllers/Catalog/ClientController.php:63
-* @route '/catalogs/clients/{client}'
-*/
-const updateForm = (args: { client: number | { id: number } } | [client: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-    action: update.url(args, {
-        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-            _method: 'PUT',
-            ...(options?.query ?? options?.mergeQuery ?? {}),
-        }
-    }),
-    method: 'post',
-})
-
-/**
-* @see \App\Http\Controllers\Catalog\ClientController::update
-* @see app/Http/Controllers/Catalog/ClientController.php:63
-* @route '/catalogs/clients/{client}'
-*/
-updateForm.put = (args: { client: number | { id: number } } | [client: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-    action: update.url(args, {
-        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-            _method: 'PUT',
-            ...(options?.query ?? options?.mergeQuery ?? {}),
-        }
-    }),
-    method: 'post',
-})
-
-/**
-* @see \App\Http\Controllers\Catalog\ClientController::update
-* @see app/Http/Controllers/Catalog/ClientController.php:63
-* @route '/catalogs/clients/{client}'
-*/
-updateForm.patch = (args: { client: number | { id: number } } | [client: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-    action: update.url(args, {
-        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-            _method: 'PATCH',
-            ...(options?.query ?? options?.mergeQuery ?? {}),
-        }
-    }),
-    method: 'post',
-})
-
-update.form = updateForm
-
-/**
 * @see \App\Http\Controllers\Catalog\ClientController::destroy
 * @see app/Http/Controllers/Catalog/ClientController.php:76
 * @route '/catalogs/clients/{client}'
@@ -309,38 +203,6 @@ destroy.delete = (args: { client: number | { id: number } } | [client: number | 
     url: destroy.url(args, options),
     method: 'delete',
 })
-
-/**
-* @see \App\Http\Controllers\Catalog\ClientController::destroy
-* @see app/Http/Controllers/Catalog/ClientController.php:76
-* @route '/catalogs/clients/{client}'
-*/
-const destroyForm = (args: { client: number | { id: number } } | [client: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-    action: destroy.url(args, {
-        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-            _method: 'DELETE',
-            ...(options?.query ?? options?.mergeQuery ?? {}),
-        }
-    }),
-    method: 'post',
-})
-
-/**
-* @see \App\Http\Controllers\Catalog\ClientController::destroy
-* @see app/Http/Controllers/Catalog/ClientController.php:76
-* @route '/catalogs/clients/{client}'
-*/
-destroyForm.delete = (args: { client: number | { id: number } } | [client: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-    action: destroy.url(args, {
-        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-            _method: 'DELETE',
-            ...(options?.query ?? options?.mergeQuery ?? {}),
-        }
-    }),
-    method: 'post',
-})
-
-destroy.form = destroyForm
 
 const clients = {
     index: Object.assign(index, index),

@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Catalog\EmployeeController::index
 * @see app/Http/Controllers/Catalog/EmployeeController.php:15
@@ -44,43 +44,6 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
 /**
-* @see \App\Http\Controllers\Catalog\EmployeeController::index
-* @see app/Http/Controllers/Catalog/EmployeeController.php:15
-* @route '/catalogs/employees'
-*/
-const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-    action: index.url(options),
-    method: 'get',
-})
-
-/**
-* @see \App\Http\Controllers\Catalog\EmployeeController::index
-* @see app/Http/Controllers/Catalog/EmployeeController.php:15
-* @route '/catalogs/employees'
-*/
-indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-    action: index.url(options),
-    method: 'get',
-})
-
-/**
-* @see \App\Http\Controllers\Catalog\EmployeeController::index
-* @see app/Http/Controllers/Catalog/EmployeeController.php:15
-* @route '/catalogs/employees'
-*/
-indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-    action: index.url({
-        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-            _method: 'HEAD',
-            ...(options?.query ?? options?.mergeQuery ?? {}),
-        }
-    }),
-    method: 'get',
-})
-
-index.form = indexForm
-
-/**
 * @see \App\Http\Controllers\Catalog\EmployeeController::store
 * @see app/Http/Controllers/Catalog/EmployeeController.php:60
 * @route '/catalogs/employees'
@@ -113,28 +76,6 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: store.url(options),
     method: 'post',
 })
-
-/**
-* @see \App\Http\Controllers\Catalog\EmployeeController::store
-* @see app/Http/Controllers/Catalog/EmployeeController.php:60
-* @route '/catalogs/employees'
-*/
-const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-    action: store.url(options),
-    method: 'post',
-})
-
-/**
-* @see \App\Http\Controllers\Catalog\EmployeeController::store
-* @see app/Http/Controllers/Catalog/EmployeeController.php:60
-* @route '/catalogs/employees'
-*/
-storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-    action: store.url(options),
-    method: 'post',
-})
-
-store.form = storeForm
 
 /**
 * @see \App\Http\Controllers\Catalog\EmployeeController::update
@@ -205,53 +146,6 @@ update.patch = (args: { employee: number | { id: number } } | [employee: number 
 })
 
 /**
-* @see \App\Http\Controllers\Catalog\EmployeeController::update
-* @see app/Http/Controllers/Catalog/EmployeeController.php:77
-* @route '/catalogs/employees/{employee}'
-*/
-const updateForm = (args: { employee: number | { id: number } } | [employee: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-    action: update.url(args, {
-        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-            _method: 'PUT',
-            ...(options?.query ?? options?.mergeQuery ?? {}),
-        }
-    }),
-    method: 'post',
-})
-
-/**
-* @see \App\Http\Controllers\Catalog\EmployeeController::update
-* @see app/Http/Controllers/Catalog/EmployeeController.php:77
-* @route '/catalogs/employees/{employee}'
-*/
-updateForm.put = (args: { employee: number | { id: number } } | [employee: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-    action: update.url(args, {
-        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-            _method: 'PUT',
-            ...(options?.query ?? options?.mergeQuery ?? {}),
-        }
-    }),
-    method: 'post',
-})
-
-/**
-* @see \App\Http\Controllers\Catalog\EmployeeController::update
-* @see app/Http/Controllers/Catalog/EmployeeController.php:77
-* @route '/catalogs/employees/{employee}'
-*/
-updateForm.patch = (args: { employee: number | { id: number } } | [employee: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-    action: update.url(args, {
-        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-            _method: 'PATCH',
-            ...(options?.query ?? options?.mergeQuery ?? {}),
-        }
-    }),
-    method: 'post',
-})
-
-update.form = updateForm
-
-/**
 * @see \App\Http\Controllers\Catalog\EmployeeController::destroy
 * @see app/Http/Controllers/Catalog/EmployeeController.php:94
 * @route '/catalogs/employees/{employee}'
@@ -308,38 +202,6 @@ destroy.delete = (args: { employee: number | { id: number } } | [employee: numbe
     url: destroy.url(args, options),
     method: 'delete',
 })
-
-/**
-* @see \App\Http\Controllers\Catalog\EmployeeController::destroy
-* @see app/Http/Controllers/Catalog/EmployeeController.php:94
-* @route '/catalogs/employees/{employee}'
-*/
-const destroyForm = (args: { employee: number | { id: number } } | [employee: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-    action: destroy.url(args, {
-        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-            _method: 'DELETE',
-            ...(options?.query ?? options?.mergeQuery ?? {}),
-        }
-    }),
-    method: 'post',
-})
-
-/**
-* @see \App\Http\Controllers\Catalog\EmployeeController::destroy
-* @see app/Http/Controllers/Catalog/EmployeeController.php:94
-* @route '/catalogs/employees/{employee}'
-*/
-destroyForm.delete = (args: { employee: number | { id: number } } | [employee: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-    action: destroy.url(args, {
-        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-            _method: 'DELETE',
-            ...(options?.query ?? options?.mergeQuery ?? {}),
-        }
-    }),
-    method: 'post',
-})
-
-destroy.form = destroyForm
 
 const employees = {
     index: Object.assign(index, index),

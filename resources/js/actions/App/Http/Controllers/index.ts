@@ -1,3 +1,4 @@
+import DashboardController from './DashboardController'
 import BitacoraController from './BitacoraController'
 import SalaryReportController from './SalaryReportController'
 import ExpenseReportController from './ExpenseReportController'
@@ -6,6 +7,7 @@ import Admin from './Admin'
 import Settings from './Settings'
 
 const Controllers = {
+    DashboardController: Object.assign(DashboardController, DashboardController),
     BitacoraController: Object.assign(BitacoraController, BitacoraController),
     SalaryReportController: Object.assign(SalaryReportController, SalaryReportController),
     ExpenseReportController: Object.assign(ExpenseReportController, ExpenseReportController),

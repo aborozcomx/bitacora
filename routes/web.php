@@ -9,6 +9,7 @@ use App\Http\Controllers\Catalog\ClientController;
 use App\Http\Controllers\Catalog\EmployeeController;
 use App\Http\Controllers\Catalog\FolioController;
 use App\Http\Controllers\Catalog\PaymentCatalogController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExpenseReportController;
 use App\Http\Controllers\SalaryReportController;
 use Illuminate\Support\Facades\Route;
@@ -16,7 +17,7 @@ use Illuminate\Support\Facades\Route;
 Route::inertia('/', 'Welcome')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'Dashboard')->name('dashboard');
+    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Bitácoras Management
     Route::get('bitacoras-finalizadas', [BitacoraController::class, 'finalized'])->name('bitacoras.finalized');
