@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
+import { ref } from 'vue';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import ConfirmCloseDialog from '@/components/ConfirmCloseDialog.vue';
 import {
     ArrowLeft,
     Printer,
@@ -15,7 +17,9 @@ import {
     CreditCard,
     Sun,
     ListCheck,
-    FileText
+    FileText,
+    Lock,
+    CheckCircle2
 } from '@lucide/vue';
 
 interface Bitacora {
@@ -23,6 +27,8 @@ interface Bitacora {
     folio_number: string;
     date: string;
     notes: string | null;
+    is_closed?: boolean;
+    closed_at?: string | null;
     branch: { name: string; address?: string; phone?: string };
     user?: { name: string; email: string };
     client?: { name: string; code: string };
@@ -63,6 +69,22 @@ const props = defineProps<{
     bitacora: Bitacora;
 }>();
 
+const showCloseDialog = ref(false);
+const isClosing = ref(false);
+
+const handleCloseFolio = () => {
+    isClosing.value = true;
+    router.post(`/bitacoras/${props.bitacora.id}/close`, {}, {
+        onSuccess: () => {
+            showCloseDialog.value = false;
+            isClosing.value = false;
+        },
+        onError: () => {
+            isClosing.value = false;
+        },
+    });
+};
+
 const formatCurrency = (val: number | string) => {
     return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(Number(val) || 0);
 };
@@ -93,6 +115,19 @@ const print = () => {
     <Head :title="`Bitácora ${bitacora.folio_number}`" />
 
     <div class="p-3 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-6 w-full min-w-0 print:p-0 print:space-y-4">
+        <!-- Closed Notice Banner -->
+        <div v-if="bitacora.is_closed" class="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 flex items-center gap-3 text-amber-900 dark:text-amber-200 text-xs sm:text-sm">
+            <div class="p-2 bg-amber-200 dark:bg-amber-900 rounded-xl shrink-0">
+                <Lock class="h-5 w-5 text-amber-800 dark:text-amber-300" />
+            </div>
+            <div>
+                <p class="font-bold">Folio Cerrado y Finalizado</p>
+                <p class="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
+                    Este folio ha sido concluido. No admite modificaciones adicionales y se encuentra resguardado en el historial de folios finalizados.
+                </p>
+            </div>
+        </div>
+
         <!-- Actions Top Bar (Hidden on Print) -->
         <div class="flex flex-wrap items-center justify-between gap-2 print:hidden">
             <Link href="/bitacoras">
@@ -105,7 +140,19 @@ const print = () => {
                 <Button variant="outline" size="sm" @click="print" class="rounded-xl">
                     <Printer class="h-4 w-4 mr-1.5" /> Imprimir
                 </Button>
-                <Link :href="`/bitacoras/${bitacora.id}/edit`">
+
+                <!-- Close Folio button if active -->
+                <Button
+                    v-if="!bitacora.is_closed"
+                    variant="outline"
+                    size="sm"
+                    class="border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-800 dark:text-amber-400 dark:hover:bg-amber-950/30 rounded-xl"
+                    @click="showCloseDialog = true"
+                >
+                    <Lock class="h-4 w-4 mr-1.5" /> Cerrar Folio
+                </Button>
+
+                <Link v-if="!bitacora.is_closed" :href="`/bitacoras/${bitacora.id}/edit`">
                     <Button size="sm" class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow">
                         <Edit class="h-4 w-4 mr-1.5" /> Editar Bitácora
                     </Button>
@@ -121,9 +168,14 @@ const print = () => {
                     <span class="text-xs font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 block mb-1">
                         Reporte Operativo de Bitácora
                     </span>
-                    <h1 class="text-2xl sm:text-3xl font-extrabold text-zinc-900 dark:text-zinc-100 font-mono">
-                        {{ bitacora.folio_number }}
-                    </h1>
+                    <div class="flex items-center gap-3">
+                        <h1 class="text-2xl sm:text-3xl font-extrabold text-zinc-900 dark:text-zinc-100 font-mono">
+                            {{ bitacora.folio_number }}
+                        </h1>
+                        <Badge v-if="bitacora.is_closed" class="bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 gap-1 text-xs py-1">
+                            <Lock class="h-3.5 w-3.5" /> Folio Cerrado
+                        </Badge>
+                    </div>
                 </div>
 
                 <div class="flex items-center gap-3">
@@ -333,4 +385,14 @@ const print = () => {
             </div>
         </div>
     </div>
+
+    <!-- Confirm Close Dialog -->
+    <ConfirmCloseDialog
+        :open="showCloseDialog"
+        :loading="isClosing"
+        @update:open="showCloseDialog = $event"
+        :title="`¿Cerrar y Finalizar Folio '${bitacora.folio_number}'?`"
+        :description="`Al cerrar el folio '${bitacora.folio_number}', se trasladará a Folios Finalizados y quedará completamente bloqueado contra cualquier edición o nuevo registro.`"
+        @confirm="handleCloseFolio"
+    />
 </template>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BitacoraActivity;
 use App\Models\BitacoraEmployee;
 use App\Models\Branch;
 use App\Models\Employee;
@@ -244,6 +245,106 @@ class SalaryReportController extends Controller
             ->sortByDesc('total_pay')
             ->values();
 
+        // Weekly Calendar of Activities (Activities and hours ONLY, NO monetary costs)
+        $activitiesQuery = BitacoraActivity::with([
+            'bitacora.branch',
+            'bitacora.client',
+            'bitacora.clientBranch',
+            'activityType',
+            'employees.employee',
+        ])
+            ->where(function ($q) use ($startDate, $endDate) {
+                $q->whereBetween('date', [$startDate, $endDate])
+                    ->orWhere(function ($sub) use ($startDate, $endDate) {
+                        $sub->whereNull('date')
+                            ->whereHas('bitacora', function ($bQ) use ($startDate, $endDate) {
+                                $bQ->whereBetween('date', [$startDate, $endDate]);
+                            });
+                    });
+            })
+            ->whereHas('bitacora', function ($bQ) use ($userId, $branchId, $user, $userBranchIds) {
+                if ($userId) {
+                    $bQ->where('user_id', $userId);
+                }
+                if ($branchId) {
+                    $bQ->where('branch_id', $branchId);
+                }
+                if (! $user->hasRole('admin')) {
+                    $bQ->whereIn('branch_id', $userBranchIds);
+                }
+            });
+
+        $activities = $activitiesQuery->get();
+
+        $dayNamesEs = [
+            0 => 'Domingo',
+            1 => 'Lunes',
+            2 => 'Martes',
+            3 => 'Miércoles',
+            4 => 'Jueves',
+            5 => 'Viernes',
+            6 => 'Sábado',
+        ];
+
+        $activitiesByDate = $activities->groupBy(function ($act) {
+            return $act->date
+                ? (is_string($act->date) ? substr($act->date, 0, 10) : $act->date->format('Y-m-d'))
+                : ($act->bitacora?->date ? (is_string($act->bitacora->date) ? substr($act->bitacora->date, 0, 10) : $act->bitacora->date->format('Y-m-d')) : 'sin_fecha');
+        });
+
+        $calendarDays = [];
+        $cursor = Carbon::parse($startDate)->startOfDay();
+        $endCursor = Carbon::parse($endDate)->startOfDay();
+
+        while ($cursor->lte($endCursor)) {
+            $dateStr = $cursor->format('Y-m-d');
+            $dayActs = $activitiesByDate->get($dateStr, collect());
+
+            $formattedActs = $dayActs->map(function ($act) {
+                return [
+                    'id' => $act->id,
+                    'bitacora_id' => $act->bitacora_id,
+                    'folio_number' => $act->bitacora?->folio_number ?? "Folio #{$act->bitacora_id}",
+                    'branch_name' => $act->bitacora?->branch?->name ?? 'N/A',
+                    'client_name' => $act->bitacora?->client?->name ?? 'Sin cliente',
+                    'client_branch_name' => $act->bitacora?->clientBranch?->name,
+                    'activity_type' => $act->activityType?->name ?? 'General',
+                    'description' => $act->description,
+                    'employees' => $act->employees->map(function ($be) {
+                        return [
+                            'employee_id' => $be->employee_id,
+                            'full_name' => $be->employee?->full_name ?? "Empleado #{$be->employee_id}",
+                            'hours_worked' => (float) $be->hours_worked,
+                            'overtime_hours' => (float) $be->overtime_hours,
+                            'is_absent' => (bool) $be->is_absent,
+                            'is_partial_shift' => (bool) $be->is_partial_shift,
+                            'partial_shift_reason' => $be->partial_shift_reason,
+                        ];
+                    })->values()->toArray(),
+                ];
+            })->values()->toArray();
+
+            $totalRegularHours = collect($formattedActs)->sum(fn ($a) => collect($a['employees'])->where('is_absent', false)->sum('hours_worked'));
+            $totalOvertimeHours = collect($formattedActs)->sum(fn ($a) => collect($a['employees'])->where('is_absent', false)->sum('overtime_hours'));
+            $employeesCount = collect($formattedActs)->flatMap(fn ($a) => collect($a['employees'])->pluck('employee_id'))->unique()->count();
+
+            $calendarDays[] = [
+                'date' => $dateStr,
+                'day_name' => $dayNamesEs[$cursor->dayOfWeek],
+                'day_number' => $cursor->day,
+                'is_sunday' => $cursor->isSunday(),
+                'is_saturday' => $cursor->isSaturday(),
+                'is_today' => $cursor->isToday(),
+                'activities' => $formattedActs,
+                'activities_count' => count($formattedActs),
+                'total_hours' => round((float) $totalRegularHours, 2),
+                'total_overtime' => round((float) $totalOvertimeHours, 2),
+                'employees_count' => $employeesCount,
+            ];
+
+            $cursor->addDay();
+        }
+
         $branches = $user->hasRole('admin')
             ? Branch::where('is_active', true)->get()
             : $user->branches;
@@ -253,6 +354,7 @@ class SalaryReportController extends Controller
         return Inertia::render('salaries/Index', [
             'payrollSummary' => $payrollSummary,
             'byFolio' => $byFolio,
+            'weeklyCalendar' => $calendarDays,
             'branches' => $branches,
             'users' => $users,
             'filters' => [

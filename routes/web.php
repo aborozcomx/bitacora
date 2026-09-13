@@ -19,6 +19,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'Dashboard')->name('dashboard');
 
     // Bitácoras Management
+    Route::get('bitacoras-finalizadas', [BitacoraController::class, 'finalized'])->name('bitacoras.finalized');
+    Route::post('bitacoras/{bitacora}/close', [BitacoraController::class, 'close'])->name('bitacoras.close');
     Route::resource('bitacoras', BitacoraController::class);
 
     // Salary & Payroll Calculation

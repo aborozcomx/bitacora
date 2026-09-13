@@ -40,11 +40,15 @@ class BitacoraPolicy
      */
     public function update(User $user, Bitacora $bitacora): bool
     {
+        if ($bitacora->is_closed) {
+            return false;
+        }
+
         if ($user->hasRole('admin')) {
             return true;
         }
 
-        return $user->branches->contains($bitacora->branch_id) || $bitacora->user_id === $user->id;
+        return $bitacora->user_id === $user->id;
     }
 
     /**
@@ -52,6 +56,26 @@ class BitacoraPolicy
      */
     public function delete(User $user, Bitacora $bitacora): bool
     {
+        if ($bitacora->is_closed) {
+            return false;
+        }
+
         return $user->hasRole('admin');
+    }
+
+    /**
+     * Determine whether the user can close the bitacora/folio.
+     */
+    public function close(User $user, Bitacora $bitacora): bool
+    {
+        if ($bitacora->is_closed) {
+            return false;
+        }
+
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        return $bitacora->user_id === $user->id;
     }
 }

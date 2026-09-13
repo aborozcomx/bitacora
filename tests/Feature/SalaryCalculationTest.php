@@ -262,3 +262,58 @@ test('salary report can be filtered by encargado user_id', function () {
         ->where('payrollSummary.0.employee_id', $emp1->id)
     );
 });
+
+test('salaries index provides weekly calendar with activities and hours strictly without monetary costs', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $branch = Branch::create(['name' => 'Sucursal Cal', 'code' => 'SUC-CAL', 'is_active' => true]);
+    $emp = Employee::create([
+        'branch_id' => $branch->id,
+        'first_name' => 'Carlos',
+        'last_name' => 'Gómez',
+        'employee_code' => 'EMP-CAL-01',
+        'base_hourly_rate' => 150.00,
+        'overtime_hourly_rate' => 225.00,
+        'is_active' => true,
+    ]);
+
+    $bitacora = Bitacora::create([
+        'branch_id' => $branch->id,
+        'user_id' => $admin->id,
+        'folio_number' => 'FOL-CAL-01',
+        'date' => '2026-08-13',
+    ]);
+
+    $activity = $bitacora->activities()->create([
+        'date' => '2026-08-13',
+        'description' => 'Mantenimiento preventivo subestación',
+    ]);
+
+    $activity->employees()->create([
+        'bitacora_id' => $bitacora->id,
+        'employee_id' => $emp->id,
+        'date' => '2026-08-13',
+        'hours_worked' => 8.0,
+        'overtime_hours' => 2.0,
+        'base_rate_applied' => 150.00,
+        'overtime_rate_applied' => 225.00,
+        'total_earned' => 1650.00,
+    ]);
+
+    $response = $this->actingAs($admin)->get('/salaries?start_date=2026-08-13&end_date=2026-08-19');
+    $response->assertStatus(200);
+    $response->assertInertia(fn ($page) => $page
+        ->component('salaries/Index')
+        ->has('weeklyCalendar', 7)
+        ->has('weeklyCalendar.0.activities', 1)
+        ->where('weeklyCalendar.0.activities.0.folio_number', 'FOL-CAL-01')
+        ->where('weeklyCalendar.0.activities.0.description', 'Mantenimiento preventivo subestación')
+        ->has('weeklyCalendar.0.activities.0.employees', 1)
+        ->where('weeklyCalendar.0.activities.0.employees.0.hours_worked', 8)
+        ->where('weeklyCalendar.0.activities.0.employees.0.overtime_hours', 2)
+        ->missing('weeklyCalendar.0.activities.0.employees.0.base_rate_applied')
+        ->missing('weeklyCalendar.0.activities.0.employees.0.total_earned')
+        ->missing('weeklyCalendar.0.activities.0.cost')
+    );
+});

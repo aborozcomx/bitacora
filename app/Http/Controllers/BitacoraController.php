@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ActivityType;
 use App\Models\Bitacora;
 use App\Models\BitacoraEmployee;
+use App\Models\BitacoraExpense;
 use App\Models\Branch;
 use App\Models\CardType;
 use App\Models\Client;
@@ -28,21 +29,10 @@ class BitacoraController extends Controller
     {
         $user = $request->user();
 
-        $bitacoras = Bitacora::with([
-            'branch',
-            'user',
-            'client',
-            'clientBranch',
-            'activities.activityType',
-            'activities.employees.employee',
-            'activities.expenses.paymentMethod',
-            'activities.expenses.paymentCard',
-        ])
+        $filterQuery = Bitacora::query()
+            ->where('is_closed', false)
             ->when(! $user->hasRole('admin'), function ($query) use ($user) {
-                $query->where(function ($q) use ($user) {
-                    $q->whereIn('branch_id', $user->branches->pluck('id'))
-                        ->orWhere('user_id', $user->id);
-                });
+                $query->where('user_id', $user->id);
             })
             ->when($request->search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
@@ -65,16 +55,104 @@ class BitacoraController extends Controller
                 $query->whereDate('date', '<=', $endDate);
             });
 
+        // Compute KPIs for matching active bitacoras
+        $activeBitacoraIds = (clone $filterQuery)->pluck('id');
+        $kpis = [
+            'total_folios' => (clone $filterQuery)->distinct('folio_number')->count('folio_number'),
+            'total_bitacoras' => $activeBitacoraIds->count(),
+            'total_payroll' => (float) BitacoraEmployee::whereIn('bitacora_id', $activeBitacoraIds)->sum('total_earned'),
+            'total_expenses' => (float) BitacoraExpense::whereIn('bitacora_id', $activeBitacoraIds)->sum('amount'),
+        ];
+        $kpis['total_cost'] = $kpis['total_payroll'] + $kpis['total_expenses'];
+
         $perPage = $request->integer('per_page', 10);
         if (! in_array($perPage, [5, 10, 15, 25, 50, 100])) {
             $perPage = 10;
         }
 
-        $bitacoras = $bitacoras
-            ->latest('date')
-            ->latest('id')
+        // Paginate by unique folio
+        $foliosPaginator = (clone $filterQuery)
+            ->select('folio_number', DB::raw('MAX(date) as latest_date'), DB::raw('MAX(id) as latest_id'))
+            ->groupBy('folio_number')
+            ->orderByDesc('latest_date')
+            ->orderByDesc('latest_id')
             ->paginate($perPage)
             ->withQueryString();
+
+        $pageFolioNumbers = $foliosPaginator->getCollection()->pluck('folio_number');
+
+        $bitacorasForPage = Bitacora::with([
+            'branch',
+            'user',
+            'client',
+            'clientBranch',
+            'activities.activityType',
+            'activities.employees.employee',
+            'activities.expenses.paymentMethod',
+            'activities.expenses.paymentCard',
+        ])
+            ->withSum('expenses', 'amount')
+            ->withSum('employees', 'total_earned')
+            ->whereIn('folio_number', $pageFolioNumbers)
+            ->where('is_closed', false)
+            ->when(! $user->hasRole('admin'), function ($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })
+            ->orderBy('date', 'desc')
+            ->orderBy('id', 'desc')
+            ->get();
+
+        $groupedByFolio = $pageFolioNumbers->map(function ($folioNumber) use ($bitacorasForPage) {
+            $folioBitacoras = $bitacorasForPage->where('folio_number', $folioNumber)->values();
+            $first = $folioBitacoras->first();
+
+            $payrollSum = (float) $folioBitacoras->sum(fn ($b) => $b->employees_sum_total_earned ?? 0);
+            $expensesSum = (float) $folioBitacoras->sum(fn ($b) => $b->expenses_sum_amount ?? 0);
+            $totalCost = $payrollSum + $expensesSum;
+            $activitiesCount = $folioBitacoras->sum(fn ($b) => $b->activities->count());
+
+            $datesList = $folioBitacoras->map(fn ($b) => is_string($b->date) ? substr($b->date, 0, 10) : $b->date->format('Y-m-d'))->unique()->values()->toArray();
+
+            return [
+                'id' => $first?->id,
+                'folio_number' => $folioNumber,
+                'folio_prefix' => $first?->folio_prefix,
+                'folio_consecutive' => $first?->folio_consecutive,
+                'date' => $datesList[0] ?? ($first?->date ? (is_string($first->date) ? substr($first->date, 0, 10) : $first->date->format('Y-m-d')) : null),
+                'dates' => $datesList,
+                'dates_count' => count($datesList),
+                'notes' => $first?->notes,
+                'is_closed' => false,
+                'client' => $first?->client,
+                'client_branch' => $first?->clientBranch,
+                'clientBranch' => $first?->clientBranch,
+                'branch' => $first?->branch,
+                'user' => $first?->user,
+                'total_payroll' => $payrollSum,
+                'total_expenses' => $expensesSum,
+                'total_cost' => $totalCost,
+                'total_activities' => $activitiesCount,
+                'bitacoras' => $folioBitacoras->map(function ($b) {
+                    $p = (float) ($b->employees_sum_total_earned ?? 0);
+                    $e = (float) ($b->expenses_sum_amount ?? 0);
+
+                    return [
+                        'id' => $b->id,
+                        'folio_number' => $b->folio_number,
+                        'date' => is_string($b->date) ? substr($b->date, 0, 10) : $b->date->format('Y-m-d'),
+                        'notes' => $b->notes,
+                        'activities_count' => $b->activities->count(),
+                        'total_payroll' => $p,
+                        'total_expenses' => $e,
+                        'total_cost' => $p + $e,
+                        'branch' => $b->branch,
+                        'user' => $b->user,
+                    ];
+                })->values()->toArray(),
+            ];
+        });
+
+        $foliosPaginator->setCollection($groupedByFolio);
 
         $branches = $user->hasRole('admin')
             ? Branch::where('is_active', true)->get()
@@ -85,12 +163,177 @@ class BitacoraController extends Controller
         $clients = Client::where('is_active', true)->get(['id', 'name', 'code']);
 
         return Inertia::render('bitacoras/Index', [
-            'bitacoras' => $bitacoras,
+            'bitacoras' => $foliosPaginator,
             'branches' => $branches,
             'clients' => $clients,
             'filters' => $request->only(['search', 'branch_id', 'client_id', 'start_date', 'end_date', 'per_page']),
             'canCreate' => $user->can('create', Bitacora::class),
+            'kpis' => $kpis,
         ]);
+    }
+
+    public function finalized(Request $request): Response
+    {
+        $user = $request->user();
+
+        $filterQuery = Bitacora::query()
+            ->where('is_closed', true)
+            ->when(! $user->hasRole('admin'), function ($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })
+            ->when($request->search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('folio_number', 'like', "%{$search}%")
+                        ->orWhere('notes', 'like', "%{$search}%")
+                        ->orWhereHas('client', fn ($cq) => $cq->where('name', 'like', "%{$search}%"))
+                        ->orWhereHas('clientBranch', fn ($cbq) => $cbq->where('name', 'like', "%{$search}%"));
+                });
+            })
+            ->when($request->branch_id, function ($query, $branchId) {
+                $query->where('branch_id', $branchId);
+            })
+            ->when($request->client_id, function ($query, $clientId) {
+                $query->where('client_id', $clientId);
+            })
+            ->when($request->start_date, function ($query, $startDate) {
+                $query->whereDate('date', '>=', $startDate);
+            })
+            ->when($request->end_date, function ($query, $endDate) {
+                $query->whereDate('date', '<=', $endDate);
+            });
+
+        // Compute KPIs for matching finalized bitacoras
+        $finalizedBitacoraIds = (clone $filterQuery)->pluck('id');
+        $kpis = [
+            'total_folios' => (clone $filterQuery)->distinct('folio_number')->count('folio_number'),
+            'total_bitacoras' => $finalizedBitacoraIds->count(),
+            'total_payroll' => (float) BitacoraEmployee::whereIn('bitacora_id', $finalizedBitacoraIds)->sum('total_earned'),
+            'total_expenses' => (float) BitacoraExpense::whereIn('bitacora_id', $finalizedBitacoraIds)->sum('amount'),
+        ];
+        $kpis['total_cost'] = $kpis['total_payroll'] + $kpis['total_expenses'];
+
+        $perPage = $request->integer('per_page', 10);
+        if (! in_array($perPage, [5, 10, 15, 25, 50, 100])) {
+            $perPage = 10;
+        }
+
+        $foliosPaginator = (clone $filterQuery)
+            ->select('folio_number', DB::raw('MAX(closed_at) as latest_closed_at'), DB::raw('MAX(date) as latest_date'), DB::raw('MAX(id) as latest_id'))
+            ->groupBy('folio_number')
+            ->orderByDesc('latest_closed_at')
+            ->orderByDesc('latest_date')
+            ->orderByDesc('latest_id')
+            ->paginate($perPage)
+            ->withQueryString();
+
+        $pageFolioNumbers = $foliosPaginator->getCollection()->pluck('folio_number');
+
+        $bitacorasForPage = Bitacora::with([
+            'branch',
+            'user',
+            'closedBy',
+            'client',
+            'clientBranch',
+            'activities.activityType',
+            'activities.employees.employee',
+            'activities.expenses.paymentMethod',
+            'activities.expenses.paymentCard',
+        ])
+            ->withSum('expenses', 'amount')
+            ->withSum('employees', 'total_earned')
+            ->whereIn('folio_number', $pageFolioNumbers)
+            ->where('is_closed', true)
+            ->when(! $user->hasRole('admin'), function ($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })
+            ->orderBy('date', 'desc')
+            ->orderBy('id', 'desc')
+            ->get();
+
+        $groupedByFolio = $pageFolioNumbers->map(function ($folioNumber) use ($bitacorasForPage) {
+            $folioBitacoras = $bitacorasForPage->where('folio_number', $folioNumber)->values();
+            $first = $folioBitacoras->first();
+
+            $payrollSum = (float) $folioBitacoras->sum(fn ($b) => $b->employees_sum_total_earned ?? 0);
+            $expensesSum = (float) $folioBitacoras->sum(fn ($b) => $b->expenses_sum_amount ?? 0);
+            $totalCost = $payrollSum + $expensesSum;
+            $activitiesCount = $folioBitacoras->sum(fn ($b) => $b->activities->count());
+
+            $datesList = $folioBitacoras->map(fn ($b) => is_string($b->date) ? substr($b->date, 0, 10) : $b->date->format('Y-m-d'))->unique()->values()->toArray();
+
+            return [
+                'id' => $first?->id,
+                'folio_number' => $folioNumber,
+                'folio_prefix' => $first?->folio_prefix,
+                'folio_consecutive' => $first?->folio_consecutive,
+                'date' => $datesList[0] ?? ($first?->date ? (is_string($first->date) ? substr($first->date, 0, 10) : $first->date->format('Y-m-d')) : null),
+                'dates' => $datesList,
+                'dates_count' => count($datesList),
+                'notes' => $first?->notes,
+                'is_closed' => true,
+                'closed_at' => $first?->closed_at ? (is_string($first->closed_at) ? $first->closed_at : $first->closed_at->format('Y-m-d H:i:s')) : null,
+                'closed_by' => $first?->closedBy,
+                'client' => $first?->client,
+                'client_branch' => $first?->clientBranch,
+                'clientBranch' => $first?->clientBranch,
+                'branch' => $first?->branch,
+                'user' => $first?->user,
+                'total_payroll' => $payrollSum,
+                'total_expenses' => $expensesSum,
+                'total_cost' => $totalCost,
+                'total_activities' => $activitiesCount,
+                'bitacoras' => $folioBitacoras->map(function ($b) {
+                    $p = (float) ($b->employees_sum_total_earned ?? 0);
+                    $e = (float) ($b->expenses_sum_amount ?? 0);
+
+                    return [
+                        'id' => $b->id,
+                        'folio_number' => $b->folio_number,
+                        'date' => is_string($b->date) ? substr($b->date, 0, 10) : $b->date->format('Y-m-d'),
+                        'notes' => $b->notes,
+                        'activities_count' => $b->activities->count(),
+                        'total_payroll' => $p,
+                        'total_expenses' => $e,
+                        'total_cost' => $p + $e,
+                        'branch' => $b->branch,
+                        'user' => $b->user,
+                    ];
+                })->values()->toArray(),
+            ];
+        });
+
+        $foliosPaginator->setCollection($groupedByFolio);
+
+        $branches = $user->hasRole('admin')
+            ? Branch::where('is_active', true)->get()
+            : ($user->branches()->where('is_active', true)->exists()
+                ? $user->branches()->where('is_active', true)->get()
+                : Branch::where('is_active', true)->get());
+
+        $clients = Client::where('is_active', true)->get(['id', 'name', 'code']);
+
+        return Inertia::render('bitacoras/Finalized', [
+            'bitacoras' => $foliosPaginator,
+            'branches' => $branches,
+            'clients' => $clients,
+            'filters' => $request->only(['search', 'branch_id', 'client_id', 'start_date', 'end_date', 'per_page']),
+            'kpis' => $kpis,
+        ]);
+    }
+
+    public function close(Request $request, Bitacora $bitacora): RedirectResponse
+    {
+        Gate::authorize('close', $bitacora);
+
+        // Close all bitacoras with the same folio_number
+        Bitacora::where('folio_number', $bitacora->folio_number)
+            ->update([
+                'is_closed' => true,
+                'closed_at' => now(),
+                'closed_by' => $request->user()->id,
+            ]);
+
+        return back()->with('success', "El folio '{$bitacora->folio_number}' ha sido cerrado exitosamente.");
     }
 
     public function create(Request $request): Response
@@ -113,13 +356,15 @@ class BitacoraController extends Controller
         $suggestedPrefix = $defaultFolio ? $defaultFolio->name : 'BIT';
         $suggestedConsecutive = (string) (($defaultFolio ? $defaultFolio->current_consecutive : 0) + 1);
 
-        $existingBitacoraFolios = Bitacora::with(['client:id,name,code', 'clientBranch:id,name,code'])
+        $existingBitacoraFolios = Bitacora::where('is_closed', false)
+            ->with(['client:id,name,code', 'clientBranch:id,name,code'])
             ->select('folio_prefix', 'folio_consecutive', 'folio_number', 'client_id', 'client_branch_id', 'branch_id')
             ->get()
             ->unique('folio_number')
             ->values();
 
-        $existingBitacoras = Bitacora::with(['client:id,name,code', 'clientBranch:id,name,code'])
+        $existingBitacoras = Bitacora::where('is_closed', false)
+            ->with(['client:id,name,code', 'clientBranch:id,name,code'])
             ->select('folio_prefix', 'folio_consecutive', 'folio_number', 'client_id', 'client_branch_id', 'branch_id', 'date')
             ->get()
             ->map(fn ($b) => [
@@ -135,6 +380,40 @@ class BitacoraController extends Controller
                 'date' => is_string($b->date) ? substr($b->date, 0, 10) : $b->date->format('Y-m-d'),
             ]);
 
+        $inheritedFolio = null;
+        $fromFolio = $request->query('from_folio');
+        if ($fromFolio) {
+            $sourceBitacora = Bitacora::with(['client', 'clientBranch', 'branch', 'user'])
+                ->where('folio_number', $fromFolio)
+                ->where('is_closed', false)
+                ->latest('date')
+                ->first();
+
+            if ($sourceBitacora) {
+                $existingDates = Bitacora::where('folio_number', $fromFolio)
+                    ->pluck('date')
+                    ->map(fn ($d) => is_string($d) ? substr($d, 0, 10) : $d->format('Y-m-d'))
+                    ->unique()
+                    ->values()
+                    ->toArray();
+
+                $inheritedFolio = [
+                    'folio_number' => $sourceBitacora->folio_number,
+                    'folio_prefix' => $sourceBitacora->folio_prefix,
+                    'folio_consecutive' => (string) $sourceBitacora->folio_consecutive,
+                    'branch_id' => $sourceBitacora->branch_id,
+                    'branch_name' => $sourceBitacora->branch?->name,
+                    'user_id' => $sourceBitacora->user_id,
+                    'user_name' => $sourceBitacora->user?->name,
+                    'client_id' => $sourceBitacora->client_id,
+                    'client_name' => $sourceBitacora->client?->name,
+                    'client_branch_id' => $sourceBitacora->client_branch_id,
+                    'client_branch_name' => $sourceBitacora->clientBranch?->name ?? 'Matriz / General',
+                    'existing_dates' => $existingDates,
+                ];
+            }
+        }
+
         return Inertia::render('bitacoras/Create', [
             'branches' => $branches,
             'users' => $users,
@@ -146,6 +425,7 @@ class BitacoraController extends Controller
             'existingBitacoras' => $existingBitacoras,
             'currentUserId' => $user?->id,
             'defaultBranchId' => $user?->branches?->first()?->id ?? ($branches->first()?->id ?? null),
+            'inheritedFolio' => $inheritedFolio,
         ]);
     }
 
@@ -178,6 +458,17 @@ class BitacoraController extends Controller
         $prefix = trim($validated['folio_prefix']);
         $consecutive = trim($validated['folio_consecutive']);
         $folioNumber = "{$prefix}-{$consecutive}";
+
+        // A closed folio cannot accept new bitácoras
+        $isClosedFolio = Bitacora::where('folio_number', $folioNumber)
+            ->where('is_closed', true)
+            ->exists();
+
+        if ($isClosedFolio) {
+            throw ValidationException::withMessages([
+                'folio_consecutive' => "El folio '{$folioNumber}' ya ha sido cerrado y no admite nuevos registros.",
+            ]);
+        }
 
         // A bitácora with the same series and folio is allowed only if the date is different
         $existsOnSameDate = Bitacora::where('folio_number', $folioNumber)
@@ -336,6 +627,10 @@ class BitacoraController extends Controller
     {
         Gate::authorize('update', $bitacora);
 
+        if ($bitacora->is_closed) {
+            abort(403, 'No se puede modificar una bitácora o folio cerrado.');
+        }
+
         $validated = $this->validateBitacoraHierarchyData($request, $bitacora);
 
         DB::transaction(function () use ($bitacora, $validated) {
@@ -489,6 +784,17 @@ class BitacoraController extends Controller
 
         // When reusing an existing folio across multiple dates, client and client branch cannot be changed
         if ($checkFolioNumber) {
+            $isClosedFolio = Bitacora::where('folio_number', $checkFolioNumber)
+                ->where('is_closed', true)
+                ->where('id', '!=', $bitacora->id)
+                ->exists();
+
+            if ($isClosedFolio) {
+                throw ValidationException::withMessages([
+                    'folio_consecutive' => "El folio '{$checkFolioNumber}' ya se encuentra cerrado.",
+                ]);
+            }
+
             $existingOtherBitacora = Bitacora::where('folio_number', $checkFolioNumber)
                 ->where('id', '!=', $bitacora->id)
                 ->with(['client', 'clientBranch'])
@@ -632,6 +938,10 @@ class BitacoraController extends Controller
     public function destroy(Bitacora $bitacora): RedirectResponse
     {
         Gate::authorize('delete', $bitacora);
+
+        if ($bitacora->is_closed) {
+            abort(403, 'No se puede eliminar una bitácora o folio cerrado.');
+        }
 
         $bitacora->delete();
 

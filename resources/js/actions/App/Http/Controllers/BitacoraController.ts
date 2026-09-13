@@ -1,7 +1,168 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../wayfinder'
 /**
+* @see \App\Http\Controllers\BitacoraController::finalized
+* @see app/Http/Controllers/BitacoraController.php:175
+* @route '/bitacoras-finalizadas'
+*/
+export const finalized = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: finalized.url(options),
+    method: 'get',
+})
+
+finalized.definition = {
+    methods: ["get","head"],
+    url: '/bitacoras-finalizadas',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Http\Controllers\BitacoraController::finalized
+* @see app/Http/Controllers/BitacoraController.php:175
+* @route '/bitacoras-finalizadas'
+*/
+finalized.url = (options?: RouteQueryOptions) => {
+    return finalized.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\BitacoraController::finalized
+* @see app/Http/Controllers/BitacoraController.php:175
+* @route '/bitacoras-finalizadas'
+*/
+finalized.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: finalized.url(options),
+    method: 'get',
+})
+
+/**
+* @see \App\Http\Controllers\BitacoraController::finalized
+* @see app/Http/Controllers/BitacoraController.php:175
+* @route '/bitacoras-finalizadas'
+*/
+finalized.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: finalized.url(options),
+    method: 'head',
+})
+
+/**
+* @see \App\Http\Controllers\BitacoraController::finalized
+* @see app/Http/Controllers/BitacoraController.php:175
+* @route '/bitacoras-finalizadas'
+*/
+const finalizedForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: finalized.url(options),
+    method: 'get',
+})
+
+/**
+* @see \App\Http\Controllers\BitacoraController::finalized
+* @see app/Http/Controllers/BitacoraController.php:175
+* @route '/bitacoras-finalizadas'
+*/
+finalizedForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: finalized.url(options),
+    method: 'get',
+})
+
+/**
+* @see \App\Http\Controllers\BitacoraController::finalized
+* @see app/Http/Controllers/BitacoraController.php:175
+* @route '/bitacoras-finalizadas'
+*/
+finalizedForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: finalized.url({
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'HEAD',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'get',
+})
+
+finalized.form = finalizedForm
+
+/**
+* @see \App\Http\Controllers\BitacoraController::close
+* @see app/Http/Controllers/BitacoraController.php:324
+* @route '/bitacoras/{bitacora}/close'
+*/
+export const close = (args: { bitacora: number | { id: number } } | [bitacora: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: close.url(args, options),
+    method: 'post',
+})
+
+close.definition = {
+    methods: ["post"],
+    url: '/bitacoras/{bitacora}/close',
+} satisfies RouteDefinition<["post"]>
+
+/**
+* @see \App\Http\Controllers\BitacoraController::close
+* @see app/Http/Controllers/BitacoraController.php:324
+* @route '/bitacoras/{bitacora}/close'
+*/
+close.url = (args: { bitacora: number | { id: number } } | [bitacora: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
+    if (typeof args === 'string' || typeof args === 'number') {
+        args = { bitacora: args }
+    }
+
+    if (typeof args === 'object' && !Array.isArray(args) && 'id' in args) {
+        args = { bitacora: args.id }
+    }
+
+    if (Array.isArray(args)) {
+        args = {
+            bitacora: args[0],
+        }
+    }
+
+    args = applyUrlDefaults(args)
+
+    const parsedArgs = {
+        bitacora: typeof args.bitacora === 'object'
+        ? args.bitacora.id
+        : args.bitacora,
+    }
+
+    return close.definition.url
+            .replace('{bitacora}', parsedArgs.bitacora.toString())
+            .replace(/\/+$/, '') + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\BitacoraController::close
+* @see app/Http/Controllers/BitacoraController.php:324
+* @route '/bitacoras/{bitacora}/close'
+*/
+close.post = (args: { bitacora: number | { id: number } } | [bitacora: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: close.url(args, options),
+    method: 'post',
+})
+
+/**
+* @see \App\Http\Controllers\BitacoraController::close
+* @see app/Http/Controllers/BitacoraController.php:324
+* @route '/bitacoras/{bitacora}/close'
+*/
+const closeForm = (args: { bitacora: number | { id: number } } | [bitacora: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: close.url(args, options),
+    method: 'post',
+})
+
+/**
+* @see \App\Http\Controllers\BitacoraController::close
+* @see app/Http/Controllers/BitacoraController.php:324
+* @route '/bitacoras/{bitacora}/close'
+*/
+closeForm.post = (args: { bitacora: number | { id: number } } | [bitacora: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: close.url(args, options),
+    method: 'post',
+})
+
+close.form = closeForm
+
+/**
 * @see \App\Http\Controllers\BitacoraController::index
-* @see app/Http/Controllers/BitacoraController.php:27
+* @see app/Http/Controllers/BitacoraController.php:28
 * @route '/bitacoras'
 */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +177,7 @@ index.definition = {
 
 /**
 * @see \App\Http\Controllers\BitacoraController::index
-* @see app/Http/Controllers/BitacoraController.php:27
+* @see app/Http/Controllers/BitacoraController.php:28
 * @route '/bitacoras'
 */
 index.url = (options?: RouteQueryOptions) => {
@@ -25,7 +186,7 @@ index.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\BitacoraController::index
-* @see app/Http/Controllers/BitacoraController.php:27
+* @see app/Http/Controllers/BitacoraController.php:28
 * @route '/bitacoras'
 */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -35,7 +196,7 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\BitacoraController::index
-* @see app/Http/Controllers/BitacoraController.php:27
+* @see app/Http/Controllers/BitacoraController.php:28
 * @route '/bitacoras'
 */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -45,7 +206,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
 /**
 * @see \App\Http\Controllers\BitacoraController::index
-* @see app/Http/Controllers/BitacoraController.php:27
+* @see app/Http/Controllers/BitacoraController.php:28
 * @route '/bitacoras'
 */
 const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -55,7 +216,7 @@ const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => (
 
 /**
 * @see \App\Http\Controllers\BitacoraController::index
-* @see app/Http/Controllers/BitacoraController.php:27
+* @see app/Http/Controllers/BitacoraController.php:28
 * @route '/bitacoras'
 */
 indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -65,7 +226,7 @@ indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\BitacoraController::index
-* @see app/Http/Controllers/BitacoraController.php:27
+* @see app/Http/Controllers/BitacoraController.php:28
 * @route '/bitacoras'
 */
 indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -82,7 +243,7 @@ index.form = indexForm
 
 /**
 * @see \App\Http\Controllers\BitacoraController::create
-* @see app/Http/Controllers/BitacoraController.php:96
+* @see app/Http/Controllers/BitacoraController.php:339
 * @route '/bitacoras/create'
 */
 export const create = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -97,7 +258,7 @@ create.definition = {
 
 /**
 * @see \App\Http\Controllers\BitacoraController::create
-* @see app/Http/Controllers/BitacoraController.php:96
+* @see app/Http/Controllers/BitacoraController.php:339
 * @route '/bitacoras/create'
 */
 create.url = (options?: RouteQueryOptions) => {
@@ -106,7 +267,7 @@ create.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\BitacoraController::create
-* @see app/Http/Controllers/BitacoraController.php:96
+* @see app/Http/Controllers/BitacoraController.php:339
 * @route '/bitacoras/create'
 */
 create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -116,7 +277,7 @@ create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\BitacoraController::create
-* @see app/Http/Controllers/BitacoraController.php:96
+* @see app/Http/Controllers/BitacoraController.php:339
 * @route '/bitacoras/create'
 */
 create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -126,7 +287,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
 /**
 * @see \App\Http\Controllers\BitacoraController::create
-* @see app/Http/Controllers/BitacoraController.php:96
+* @see app/Http/Controllers/BitacoraController.php:339
 * @route '/bitacoras/create'
 */
 const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -136,7 +297,7 @@ const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => 
 
 /**
 * @see \App\Http\Controllers\BitacoraController::create
-* @see app/Http/Controllers/BitacoraController.php:96
+* @see app/Http/Controllers/BitacoraController.php:339
 * @route '/bitacoras/create'
 */
 createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -146,7 +307,7 @@ createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
 
 /**
 * @see \App\Http\Controllers\BitacoraController::create
-* @see app/Http/Controllers/BitacoraController.php:96
+* @see app/Http/Controllers/BitacoraController.php:339
 * @route '/bitacoras/create'
 */
 createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -163,7 +324,7 @@ create.form = createForm
 
 /**
 * @see \App\Http\Controllers\BitacoraController::store
-* @see app/Http/Controllers/BitacoraController.php:152
+* @see app/Http/Controllers/BitacoraController.php:432
 * @route '/bitacoras'
 */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -178,7 +339,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\BitacoraController::store
-* @see app/Http/Controllers/BitacoraController.php:152
+* @see app/Http/Controllers/BitacoraController.php:432
 * @route '/bitacoras'
 */
 store.url = (options?: RouteQueryOptions) => {
@@ -187,7 +348,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\BitacoraController::store
-* @see app/Http/Controllers/BitacoraController.php:152
+* @see app/Http/Controllers/BitacoraController.php:432
 * @route '/bitacoras'
 */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -197,7 +358,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
 /**
 * @see \App\Http\Controllers\BitacoraController::store
-* @see app/Http/Controllers/BitacoraController.php:152
+* @see app/Http/Controllers/BitacoraController.php:432
 * @route '/bitacoras'
 */
 const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -207,7 +368,7 @@ const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => 
 
 /**
 * @see \App\Http\Controllers\BitacoraController::store
-* @see app/Http/Controllers/BitacoraController.php:152
+* @see app/Http/Controllers/BitacoraController.php:432
 * @route '/bitacoras'
 */
 storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -219,7 +380,7 @@ store.form = storeForm
 
 /**
 * @see \App\Http\Controllers\BitacoraController::show
-* @see app/Http/Controllers/BitacoraController.php:237
+* @see app/Http/Controllers/BitacoraController.php:528
 * @route '/bitacoras/{bitacora}'
 */
 export const show = (args: { bitacora: number | { id: number } } | [bitacora: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -234,7 +395,7 @@ show.definition = {
 
 /**
 * @see \App\Http\Controllers\BitacoraController::show
-* @see app/Http/Controllers/BitacoraController.php:237
+* @see app/Http/Controllers/BitacoraController.php:528
 * @route '/bitacoras/{bitacora}'
 */
 show.url = (args: { bitacora: number | { id: number } } | [bitacora: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -267,7 +428,7 @@ show.url = (args: { bitacora: number | { id: number } } | [bitacora: number | { 
 
 /**
 * @see \App\Http\Controllers\BitacoraController::show
-* @see app/Http/Controllers/BitacoraController.php:237
+* @see app/Http/Controllers/BitacoraController.php:528
 * @route '/bitacoras/{bitacora}'
 */
 show.get = (args: { bitacora: number | { id: number } } | [bitacora: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -277,7 +438,7 @@ show.get = (args: { bitacora: number | { id: number } } | [bitacora: number | { 
 
 /**
 * @see \App\Http\Controllers\BitacoraController::show
-* @see app/Http/Controllers/BitacoraController.php:237
+* @see app/Http/Controllers/BitacoraController.php:528
 * @route '/bitacoras/{bitacora}'
 */
 show.head = (args: { bitacora: number | { id: number } } | [bitacora: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -287,7 +448,7 @@ show.head = (args: { bitacora: number | { id: number } } | [bitacora: number | {
 
 /**
 * @see \App\Http\Controllers\BitacoraController::show
-* @see app/Http/Controllers/BitacoraController.php:237
+* @see app/Http/Controllers/BitacoraController.php:528
 * @route '/bitacoras/{bitacora}'
 */
 const showForm = (args: { bitacora: number | { id: number } } | [bitacora: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -297,7 +458,7 @@ const showForm = (args: { bitacora: number | { id: number } } | [bitacora: numbe
 
 /**
 * @see \App\Http\Controllers\BitacoraController::show
-* @see app/Http/Controllers/BitacoraController.php:237
+* @see app/Http/Controllers/BitacoraController.php:528
 * @route '/bitacoras/{bitacora}'
 */
 showForm.get = (args: { bitacora: number | { id: number } } | [bitacora: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -307,7 +468,7 @@ showForm.get = (args: { bitacora: number | { id: number } } | [bitacora: number 
 
 /**
 * @see \App\Http\Controllers\BitacoraController::show
-* @see app/Http/Controllers/BitacoraController.php:237
+* @see app/Http/Controllers/BitacoraController.php:528
 * @route '/bitacoras/{bitacora}'
 */
 showForm.head = (args: { bitacora: number | { id: number } } | [bitacora: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -324,7 +485,7 @@ show.form = showForm
 
 /**
 * @see \App\Http\Controllers\BitacoraController::edit
-* @see app/Http/Controllers/BitacoraController.php:258
+* @see app/Http/Controllers/BitacoraController.php:549
 * @route '/bitacoras/{bitacora}/edit'
 */
 export const edit = (args: { bitacora: number | { id: number } } | [bitacora: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -339,7 +500,7 @@ edit.definition = {
 
 /**
 * @see \App\Http\Controllers\BitacoraController::edit
-* @see app/Http/Controllers/BitacoraController.php:258
+* @see app/Http/Controllers/BitacoraController.php:549
 * @route '/bitacoras/{bitacora}/edit'
 */
 edit.url = (args: { bitacora: number | { id: number } } | [bitacora: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -372,7 +533,7 @@ edit.url = (args: { bitacora: number | { id: number } } | [bitacora: number | { 
 
 /**
 * @see \App\Http\Controllers\BitacoraController::edit
-* @see app/Http/Controllers/BitacoraController.php:258
+* @see app/Http/Controllers/BitacoraController.php:549
 * @route '/bitacoras/{bitacora}/edit'
 */
 edit.get = (args: { bitacora: number | { id: number } } | [bitacora: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -382,7 +543,7 @@ edit.get = (args: { bitacora: number | { id: number } } | [bitacora: number | { 
 
 /**
 * @see \App\Http\Controllers\BitacoraController::edit
-* @see app/Http/Controllers/BitacoraController.php:258
+* @see app/Http/Controllers/BitacoraController.php:549
 * @route '/bitacoras/{bitacora}/edit'
 */
 edit.head = (args: { bitacora: number | { id: number } } | [bitacora: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -392,7 +553,7 @@ edit.head = (args: { bitacora: number | { id: number } } | [bitacora: number | {
 
 /**
 * @see \App\Http\Controllers\BitacoraController::edit
-* @see app/Http/Controllers/BitacoraController.php:258
+* @see app/Http/Controllers/BitacoraController.php:549
 * @route '/bitacoras/{bitacora}/edit'
 */
 const editForm = (args: { bitacora: number | { id: number } } | [bitacora: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -402,7 +563,7 @@ const editForm = (args: { bitacora: number | { id: number } } | [bitacora: numbe
 
 /**
 * @see \App\Http\Controllers\BitacoraController::edit
-* @see app/Http/Controllers/BitacoraController.php:258
+* @see app/Http/Controllers/BitacoraController.php:549
 * @route '/bitacoras/{bitacora}/edit'
 */
 editForm.get = (args: { bitacora: number | { id: number } } | [bitacora: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -412,7 +573,7 @@ editForm.get = (args: { bitacora: number | { id: number } } | [bitacora: number 
 
 /**
 * @see \App\Http\Controllers\BitacoraController::edit
-* @see app/Http/Controllers/BitacoraController.php:258
+* @see app/Http/Controllers/BitacoraController.php:549
 * @route '/bitacoras/{bitacora}/edit'
 */
 editForm.head = (args: { bitacora: number | { id: number } } | [bitacora: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -429,7 +590,7 @@ edit.form = editForm
 
 /**
 * @see \App\Http\Controllers\BitacoraController::update
-* @see app/Http/Controllers/BitacoraController.php:335
+* @see app/Http/Controllers/BitacoraController.php:626
 * @route '/bitacoras/{bitacora}'
 */
 export const update = (args: { bitacora: number | { id: number } } | [bitacora: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -444,7 +605,7 @@ update.definition = {
 
 /**
 * @see \App\Http\Controllers\BitacoraController::update
-* @see app/Http/Controllers/BitacoraController.php:335
+* @see app/Http/Controllers/BitacoraController.php:626
 * @route '/bitacoras/{bitacora}'
 */
 update.url = (args: { bitacora: number | { id: number } } | [bitacora: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -477,7 +638,7 @@ update.url = (args: { bitacora: number | { id: number } } | [bitacora: number | 
 
 /**
 * @see \App\Http\Controllers\BitacoraController::update
-* @see app/Http/Controllers/BitacoraController.php:335
+* @see app/Http/Controllers/BitacoraController.php:626
 * @route '/bitacoras/{bitacora}'
 */
 update.put = (args: { bitacora: number | { id: number } } | [bitacora: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -487,7 +648,7 @@ update.put = (args: { bitacora: number | { id: number } } | [bitacora: number | 
 
 /**
 * @see \App\Http\Controllers\BitacoraController::update
-* @see app/Http/Controllers/BitacoraController.php:335
+* @see app/Http/Controllers/BitacoraController.php:626
 * @route '/bitacoras/{bitacora}'
 */
 update.patch = (args: { bitacora: number | { id: number } } | [bitacora: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -497,7 +658,7 @@ update.patch = (args: { bitacora: number | { id: number } } | [bitacora: number 
 
 /**
 * @see \App\Http\Controllers\BitacoraController::update
-* @see app/Http/Controllers/BitacoraController.php:335
+* @see app/Http/Controllers/BitacoraController.php:626
 * @route '/bitacoras/{bitacora}'
 */
 const updateForm = (args: { bitacora: number | { id: number } } | [bitacora: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -512,7 +673,7 @@ const updateForm = (args: { bitacora: number | { id: number } } | [bitacora: num
 
 /**
 * @see \App\Http\Controllers\BitacoraController::update
-* @see app/Http/Controllers/BitacoraController.php:335
+* @see app/Http/Controllers/BitacoraController.php:626
 * @route '/bitacoras/{bitacora}'
 */
 updateForm.put = (args: { bitacora: number | { id: number } } | [bitacora: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -527,7 +688,7 @@ updateForm.put = (args: { bitacora: number | { id: number } } | [bitacora: numbe
 
 /**
 * @see \App\Http\Controllers\BitacoraController::update
-* @see app/Http/Controllers/BitacoraController.php:335
+* @see app/Http/Controllers/BitacoraController.php:626
 * @route '/bitacoras/{bitacora}'
 */
 updateForm.patch = (args: { bitacora: number | { id: number } } | [bitacora: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -544,7 +705,7 @@ update.form = updateForm
 
 /**
 * @see \App\Http\Controllers\BitacoraController::destroy
-* @see app/Http/Controllers/BitacoraController.php:632
+* @see app/Http/Controllers/BitacoraController.php:938
 * @route '/bitacoras/{bitacora}'
 */
 export const destroy = (args: { bitacora: number | { id: number } } | [bitacora: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -559,7 +720,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\BitacoraController::destroy
-* @see app/Http/Controllers/BitacoraController.php:632
+* @see app/Http/Controllers/BitacoraController.php:938
 * @route '/bitacoras/{bitacora}'
 */
 destroy.url = (args: { bitacora: number | { id: number } } | [bitacora: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -592,7 +753,7 @@ destroy.url = (args: { bitacora: number | { id: number } } | [bitacora: number |
 
 /**
 * @see \App\Http\Controllers\BitacoraController::destroy
-* @see app/Http/Controllers/BitacoraController.php:632
+* @see app/Http/Controllers/BitacoraController.php:938
 * @route '/bitacoras/{bitacora}'
 */
 destroy.delete = (args: { bitacora: number | { id: number } } | [bitacora: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -602,7 +763,7 @@ destroy.delete = (args: { bitacora: number | { id: number } } | [bitacora: numbe
 
 /**
 * @see \App\Http\Controllers\BitacoraController::destroy
-* @see app/Http/Controllers/BitacoraController.php:632
+* @see app/Http/Controllers/BitacoraController.php:938
 * @route '/bitacoras/{bitacora}'
 */
 const destroyForm = (args: { bitacora: number | { id: number } } | [bitacora: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -617,7 +778,7 @@ const destroyForm = (args: { bitacora: number | { id: number } } | [bitacora: nu
 
 /**
 * @see \App\Http\Controllers\BitacoraController::destroy
-* @see app/Http/Controllers/BitacoraController.php:632
+* @see app/Http/Controllers/BitacoraController.php:938
 * @route '/bitacoras/{bitacora}'
 */
 destroyForm.delete = (args: { bitacora: number | { id: number } } | [bitacora: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -632,6 +793,6 @@ destroyForm.delete = (args: { bitacora: number | { id: number } } | [bitacora: n
 
 destroy.form = destroyForm
 
-const BitacoraController = { index, create, store, show, edit, update, destroy }
+const BitacoraController = { finalized, close, index, create, store, show, edit, update, destroy }
 
 export default BitacoraController

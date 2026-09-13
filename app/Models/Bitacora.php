@@ -34,12 +34,17 @@ class Bitacora extends Model
         'folio_consecutive',
         'date',
         'notes',
+        'is_closed',
+        'closed_at',
+        'closed_by',
     ];
 
     protected function casts(): array
     {
         return [
             'date' => 'date:Y-m-d',
+            'is_closed' => 'boolean',
+            'closed_at' => 'datetime',
         ];
     }
 
@@ -57,6 +62,14 @@ class Bitacora extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function closedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'closed_by');
     }
 
     /**
@@ -107,5 +120,10 @@ class Bitacora extends Model
     public function getTotalPayrollAttribute(): float
     {
         return (float) $this->employees->sum('total_earned');
+    }
+
+    public function getTotalCostAttribute(): float
+    {
+        return $this->total_expenses + $this->total_payroll;
     }
 }

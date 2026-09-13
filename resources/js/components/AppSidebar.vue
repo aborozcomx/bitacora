@@ -11,7 +11,8 @@ import {
     ListCheck,
     FileDigit,
     UserCheck,
-    ShieldCheck
+    ShieldCheck,
+    Archive
 } from '@lucide/vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavUser from '@/components/NavUser.vue';
@@ -64,7 +65,15 @@ const { isCurrentUrl } = useCurrentUrl();
                         <SidebarMenuButton as-child :is-active="isCurrentUrl('/bitacoras')">
                             <Link href="/bitacoras">
                                 <ClipboardList class="h-4 w-4" />
-                                <span>Bitácoras</span>
+                                <span>Bitácoras Activas</span>
+                            </Link>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton as-child :is-active="isCurrentUrl('/bitacoras-finalizadas')">
+                            <Link href="/bitacoras-finalizadas">
+                                <Archive class="h-4 w-4" />
+                                <span>Folios Finalizados</span>
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>

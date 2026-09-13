@@ -118,9 +118,46 @@ interface Totals {
     grand_partial_shifts_count?: number;
 }
 
+interface CalendarActivityEmployee {
+    employee_id: number;
+    full_name: string;
+    hours_worked: number;
+    overtime_hours: number;
+    is_absent: boolean;
+    is_partial_shift?: boolean;
+    partial_shift_reason?: string | null;
+}
+
+interface CalendarActivity {
+    id: number;
+    bitacora_id: number;
+    folio_number: string;
+    branch_name: string;
+    client_name: string;
+    client_branch_name?: string | null;
+    activity_type: string;
+    description: string;
+    employees: CalendarActivityEmployee[];
+}
+
+interface CalendarDay {
+    date: string;
+    day_name: string;
+    day_number: number;
+    is_sunday: boolean;
+    is_saturday: boolean;
+    is_today: boolean;
+    activities: CalendarActivity[];
+    activities_count: number;
+    total_hours: number;
+    total_overtime: number;
+    employees_count: number;
+}
+
 const props = defineProps<{
     payrollSummary: PayrollItem[];
     byFolio?: PeriodGroupedFolio[];
+    weeklyCalendar?: CalendarDay[];
     branches: Branch[];
     users: User[];
     filters: {
@@ -133,7 +170,7 @@ const props = defineProps<{
     totals: Totals;
 }>();
 
-const activeTab = ref<'employees' | 'folios'>('employees');
+const activeTab = ref<'employees' | 'folios' | 'calendar'>('employees');
 
 const startDate = ref(props.filters.start_date);
 const endDate = ref(props.filters.end_date);
@@ -440,7 +477,7 @@ const printReport = () => {
         </div>
 
         <!-- TABS SWITCHER -->
-        <div class="flex items-center gap-2 border-b border-zinc-200 dark:border-zinc-800 pb-2 print:hidden">
+        <div class="flex items-center gap-2 border-b border-zinc-200 dark:border-zinc-800 pb-2 print:hidden flex-wrap">
             <Button
                 :variant="activeTab === 'employees' ? 'default' : 'outline'"
                 size="sm"
@@ -460,6 +497,16 @@ const printReport = () => {
             >
                 <FileSpreadsheet class="h-3.5 w-3.5" />
                 Sumatoria Consolidada por Folio ({{ byFolio?.length || 0 }} folios)
+            </Button>
+            <Button
+                :variant="activeTab === 'calendar' ? 'default' : 'outline'"
+                size="sm"
+                @click="activeTab = 'calendar'"
+                class="rounded-xl text-xs gap-1.5 shadow-sm"
+                :class="activeTab === 'calendar' ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : ''"
+            >
+                <Calendar class="h-3.5 w-3.5" />
+                Calendario Semanal de Actividades ({{ weeklyCalendar?.length || 0 }} días)
             </Button>
         </div>
 
@@ -835,6 +882,150 @@ const printReport = () => {
                         </tr>
                     </tfoot>
                 </table>
+            </div>
+        </div>
+
+        <!-- WEEKLY CALENDAR VIEW (ACTIVITIES ONLY - NO COST) -->
+        <div v-show="activeTab === 'calendar'" class="space-y-4">
+            <!-- Calendar Info Banner -->
+            <div class="p-4 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <div class="flex items-center gap-3">
+                    <div class="p-2.5 bg-indigo-600 text-white rounded-xl shrink-0">
+                        <Calendar class="h-5 w-5" />
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-sm text-indigo-950 dark:text-indigo-200">
+                            Calendario Semanal de Actividades ({{ startDate }} al {{ endDate }})
+                        </h3>
+                        <p class="text-indigo-700 dark:text-indigo-400 mt-0.5">
+                            Visualización de jornadas, folios y personal asignado por día.
+                            <span class="font-semibold underline">Modo operativo: No muestra tarifas ni costos monetarios.</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Summary Badges -->
+                <div class="flex items-center gap-2 flex-wrap">
+                    <span class="px-2.5 py-1 rounded-lg bg-white dark:bg-zinc-900 border border-indigo-200 dark:border-indigo-800 font-medium text-zinc-700 dark:text-zinc-300">
+                        📅 {{ weeklyCalendar?.length || 0 }} días
+                    </span>
+                    <span class="px-2.5 py-1 rounded-lg bg-white dark:bg-zinc-900 border border-indigo-200 dark:border-indigo-800 font-medium text-zinc-700 dark:text-zinc-300">
+                        ⚡ {{ weeklyCalendar?.reduce((sum, d) => sum + d.activities_count, 0) || 0 }} actividades
+                    </span>
+                    <span class="px-2.5 py-1 rounded-lg bg-white dark:bg-zinc-900 border border-indigo-200 dark:border-indigo-800 font-medium text-zinc-700 dark:text-zinc-300">
+                        ⏱️ {{ weeklyCalendar?.reduce((sum, d) => sum + d.total_hours + d.total_overtime, 0).toFixed(1) || 0 }} hrs totales
+                    </span>
+                </div>
+            </div>
+
+            <!-- Calendar Days Grid (7 columns on large screens) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-3 w-full min-w-0">
+                <div
+                    v-for="day in weeklyCalendar"
+                    :key="day.date"
+                    class="flex flex-col rounded-2xl border transition overflow-hidden bg-white dark:bg-zinc-900"
+                    :class="[
+                        day.is_today
+                            ? 'border-indigo-400 dark:border-indigo-600 ring-2 ring-indigo-400/20'
+                            : day.is_sunday
+                                ? 'border-amber-300 dark:border-amber-800/80 bg-amber-50/10'
+                                : 'border-zinc-200 dark:border-zinc-800'
+                    ]"
+                >
+                    <!-- Day Header -->
+                    <div
+                        class="p-3 border-b text-center"
+                        :class="[
+                            day.is_today
+                                ? 'bg-indigo-600 text-white'
+                                : day.is_sunday
+                                    ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 border-amber-200 dark:border-amber-800'
+                                    : 'bg-zinc-50 dark:bg-zinc-800/70 text-zinc-800 dark:text-zinc-200 border-zinc-200 dark:border-zinc-800'
+                        ]"
+                    >
+                        <div class="flex items-center justify-between gap-1">
+                            <span class="text-[11px] font-extrabold uppercase tracking-wider">
+                                {{ day.day_name }}
+                            </span>
+                            <span v-if="day.is_today" class="text-[9px] uppercase font-bold bg-white/20 px-1.5 py-0.5 rounded">
+                                Hoy
+                            </span>
+                            <span v-else-if="day.is_sunday" class="text-[9px] uppercase font-bold bg-amber-500 text-white px-1.5 py-0.5 rounded">
+                                Domingo
+                            </span>
+                        </div>
+                        <div class="text-lg font-black font-mono mt-0.5" :class="day.is_today ? 'text-white' : 'text-zinc-900 dark:text-zinc-100'">
+                            {{ day.date.slice(8, 10) }} <span class="text-xs font-normal opacity-80">/ {{ day.date.slice(5, 7) }}</span>
+                        </div>
+                        <div class="flex items-center justify-center gap-1.5 mt-1 text-[10px]" :class="day.is_today ? 'text-indigo-100' : 'text-zinc-500 dark:text-zinc-400'">
+                            <span>{{ day.activities_count }} act.</span>
+                            <span>•</span>
+                            <span class="font-mono">{{ day.total_hours }}h<span v-if="day.total_overtime > 0" class="text-amber-500 font-bold">+{{ day.total_overtime }}h</span></span>
+                        </div>
+                    </div>
+
+                    <!-- Day Activities Content -->
+                    <div class="p-2 space-y-2 flex-1 overflow-y-auto max-h-[550px] divide-y divide-zinc-100 dark:divide-zinc-800">
+                        <div
+                            v-for="act in day.activities"
+                            :key="act.id"
+                            class="pt-2 first:pt-0 space-y-1.5"
+                        >
+                            <!-- Folio and Type -->
+                            <div class="flex items-start justify-between gap-1">
+                                <Link
+                                    :href="`/bitacoras/${act.bitacora_id}`"
+                                    class="font-mono font-bold text-xs text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+                                >
+                                    {{ act.folio_number }}
+                                </Link>
+                                <Badge variant="secondary" class="text-[9px] px-1 py-0 truncate max-w-[90px]">
+                                    {{ act.activity_type }}
+                                </Badge>
+                            </div>
+
+                            <!-- Client & Branch -->
+                            <div class="text-[10px] text-zinc-500 dark:text-zinc-400 leading-tight">
+                                <span class="font-semibold text-zinc-700 dark:text-zinc-300 block truncate">{{ act.client_name }}</span>
+                                <span v-if="act.client_branch_name" class="text-[9px] text-zinc-400 block truncate">{{ act.client_branch_name }}</span>
+                            </div>
+
+                            <!-- Description -->
+                            <p class="text-[11px] text-zinc-700 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-800/50 p-1.5 rounded-lg border border-zinc-100 dark:border-zinc-800 line-clamp-3">
+                                {{ act.description }}
+                            </p>
+
+                            <!-- Staff List (NO COSTS) -->
+                            <div v-if="act.employees && act.employees.length > 0" class="space-y-1 pt-1">
+                                <span class="text-[9px] font-bold uppercase text-zinc-400 tracking-wider block">
+                                    Personal ({{ act.employees.length }})
+                                </span>
+                                <div class="space-y-1">
+                                    <div
+                                        v-for="emp in act.employees"
+                                        :key="emp.employee_id"
+                                        class="flex items-center justify-between text-[10px] p-1 rounded bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-100 dark:border-zinc-800/60"
+                                    >
+                                        <span class="truncate font-medium text-zinc-800 dark:text-zinc-200 max-w-[95px]" :title="emp.full_name">
+                                            {{ emp.full_name }}
+                                        </span>
+                                        <div class="shrink-0 font-mono text-[9px] flex items-center gap-1">
+                                            <span v-if="emp.is_absent" class="text-red-500 font-bold">Falta</span>
+                                            <span v-else class="text-zinc-600 dark:text-zinc-300 font-semibold">
+                                                {{ emp.hours_worked }}h<span v-if="emp.overtime_hours > 0" class="text-amber-500">+{{ emp.overtime_hours }}h</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Empty State for Day -->
+                        <div v-if="day.activities.length === 0" class="py-12 text-center text-zinc-400 text-[11px] italic">
+                            Sin actividad
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

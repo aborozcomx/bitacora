@@ -2,6 +2,8 @@
 
 use App\Models\ActivityType;
 use App\Models\Bitacora;
+use App\Models\BitacoraEmployee;
+use App\Models\BitacoraExpense;
 use App\Models\Branch;
 use App\Models\Client;
 use App\Models\ClientBranch;
@@ -578,4 +580,266 @@ test('cannot change client branch in bitacora update if folio is shared across s
 
     $response->assertSessionHasErrors(['client_branch_id']);
     expect($bitacora1->fresh()->client_branch_id)->toBe($cb1->id);
+});
+
+test('closing a bitacora marks all bitacoras sharing the same folio as closed and prevents modifications', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $branch = Branch::create(['name' => 'Sucursal Closure', 'code' => 'SUC-CLS', 'is_active' => true]);
+    $client = Client::create(['name' => 'Cliente Closure', 'code' => 'CC-01', 'is_active' => true]);
+
+    $b1 = Bitacora::create([
+        'branch_id' => $branch->id,
+        'user_id' => $admin->id,
+        'client_id' => $client->id,
+        'folio_number' => 'FOL-CLOSE-01',
+        'folio_prefix' => 'FOL',
+        'folio_consecutive' => 'CLOSE-01',
+        'date' => '2026-08-10',
+    ]);
+
+    $b2 = Bitacora::create([
+        'branch_id' => $branch->id,
+        'user_id' => $admin->id,
+        'client_id' => $client->id,
+        'folio_number' => 'FOL-CLOSE-01',
+        'folio_prefix' => 'FOL',
+        'folio_consecutive' => 'CLOSE-01',
+        'date' => '2026-08-11',
+    ]);
+
+    // Close bitacora 1
+    $response = $this->actingAs($admin)->post("/bitacoras/{$b1->id}/close");
+    $response->assertSessionHas('success');
+
+    // Both b1 and b2 should be closed
+    expect($b1->fresh()->is_closed)->toBeTrue()
+        ->and($b1->fresh()->closed_by)->toBe($admin->id)
+        ->and($b1->fresh()->closed_at)->not->toBeNull()
+        ->and($b2->fresh()->is_closed)->toBeTrue();
+
+    // Updating a closed bitacora is forbidden (403)
+    $updateResponse = $this->actingAs($admin)->put("/bitacoras/{$b1->id}", [
+        'date' => '2026-08-10',
+        'activities' => [
+            ['date' => '2026-08-10', 'description' => 'Test edit'],
+        ],
+    ]);
+    $updateResponse->assertStatus(403);
+
+    // Deleting a closed bitacora is forbidden (403)
+    $deleteResponse = $this->actingAs($admin)->delete("/bitacoras/{$b1->id}");
+    $deleteResponse->assertStatus(403);
+    expect(Bitacora::find($b1->id))->not->toBeNull();
+
+    // Reusing the closed folio to create a new bitacora is blocked
+    $createResponse = $this->actingAs($admin)->post('/bitacoras', [
+        'branch_id' => $branch->id,
+        'user_id' => $admin->id,
+        'client_id' => $client->id,
+        'folio_prefix' => 'FOL',
+        'folio_consecutive' => 'CLOSE-01',
+        'date' => '2026-08-12',
+    ]);
+    $createResponse->assertSessionHasErrors(['folio_consecutive']);
+});
+
+test('bitacoras index only displays active non-closed bitacoras and user scoping applies for non-admin', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $user1 = User::factory()->create();
+    $user1->assignRole('encargado');
+
+    $user2 = User::factory()->create();
+    $user2->assignRole('encargado');
+
+    $branch = Branch::create(['name' => 'Sucursal Scoping', 'code' => 'SUC-SCP', 'is_active' => true]);
+    $client = Client::create(['name' => 'Cliente Scoping', 'code' => 'CS-01', 'is_active' => true]);
+
+    // Active bitacora for user1
+    $bActiveUser1 = Bitacora::create([
+        'branch_id' => $branch->id,
+        'user_id' => $user1->id,
+        'client_id' => $client->id,
+        'folio_number' => 'FOL-ACTIVE-U1',
+        'date' => '2026-08-15',
+        'is_closed' => false,
+    ]);
+
+    // Closed bitacora for user1
+    $bClosedUser1 = Bitacora::create([
+        'branch_id' => $branch->id,
+        'user_id' => $user1->id,
+        'client_id' => $client->id,
+        'folio_number' => 'FOL-CLOSED-U1',
+        'date' => '2026-08-14',
+        'is_closed' => true,
+    ]);
+
+    // Active bitacora for user2
+    $bActiveUser2 = Bitacora::create([
+        'branch_id' => $branch->id,
+        'user_id' => $user2->id,
+        'client_id' => $client->id,
+        'folio_number' => 'FOL-ACTIVE-U2',
+        'date' => '2026-08-15',
+        'is_closed' => false,
+    ]);
+
+    // As user1: should only see $bActiveUser1
+    $response = $this->actingAs($user1)->get('/bitacoras');
+    $response->assertStatus(200);
+    $response->assertInertia(fn ($page) => $page
+        ->component('bitacoras/Index')
+        ->has('bitacoras.data', 1)
+        ->where('bitacoras.data.0.folio_number', 'FOL-ACTIVE-U1')
+    );
+
+    // As admin: should see both active bitacoras ($bActiveUser1 and $bActiveUser2), but NOT closed
+    $adminResponse = $this->actingAs($admin)->get('/bitacoras');
+    $adminResponse->assertStatus(200);
+    $adminResponse->assertInertia(fn ($page) => $page
+        ->component('bitacoras/Index')
+        ->has('bitacoras.data', 2)
+    );
+
+    // Finalized view as user1: should see $bClosedUser1
+    $finalizedResponse = $this->actingAs($user1)->get('/bitacoras-finalizadas');
+    $finalizedResponse->assertStatus(200);
+    $finalizedResponse->assertInertia(fn ($page) => $page
+        ->component('bitacoras/Finalized')
+        ->has('bitacoras.data', 1)
+        ->where('bitacoras.data.0.folio_number', 'FOL-CLOSED-U1')
+    );
+});
+
+test('bitacoras index groups entries by folio and computes accurate financial summations', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $branch = Branch::create(['name' => 'Sucursal Agrupada', 'code' => 'SUC-AGR', 'is_active' => true]);
+    $client = Client::create(['name' => 'Cliente Agrupado', 'code' => 'CLI-AGR', 'is_active' => true]);
+    $paymentMethod = PaymentMethod::firstOrCreate(
+        ['slug' => 'efectivo'],
+        ['name' => 'Efectivo', 'requires_card_details' => false, 'is_active' => true]
+    );
+
+    $emp = Employee::create([
+        'branch_id' => $branch->id,
+        'first_name' => 'Roberto',
+        'last_name' => 'Gómez',
+        'employee_code' => 'EMP-AGR-01',
+        'base_hourly_rate' => 100.00,
+        'overtime_hourly_rate' => 150.00,
+        'is_active' => true,
+    ]);
+
+    // Create 2 bitácoras for Day 1 and Day 2 under the SAME folio
+    $bDay1 = Bitacora::create([
+        'branch_id' => $branch->id,
+        'user_id' => $admin->id,
+        'client_id' => $client->id,
+        'folio_number' => 'FOL-SUM-TEST-100',
+        'date' => '2026-08-10',
+        'is_closed' => false,
+    ]);
+
+    $bDay2 = Bitacora::create([
+        'branch_id' => $branch->id,
+        'user_id' => $admin->id,
+        'client_id' => $client->id,
+        'folio_number' => 'FOL-SUM-TEST-100',
+        'date' => '2026-08-11',
+        'is_closed' => false,
+    ]);
+
+    // Add employee earning to Day 1 ($800) and Day 2 ($600) -> total payroll $1,400
+    BitacoraEmployee::create([
+        'bitacora_id' => $bDay1->id,
+        'employee_id' => $emp->id,
+        'date' => '2026-08-10',
+        'hours_worked' => 8,
+        'overtime_hours' => 0,
+        'hourly_rate' => 100,
+        'overtime_rate' => 150,
+        'total_earned' => 800.00,
+    ]);
+
+    BitacoraEmployee::create([
+        'bitacora_id' => $bDay2->id,
+        'employee_id' => $emp->id,
+        'date' => '2026-08-11',
+        'hours_worked' => 6,
+        'overtime_hours' => 0,
+        'hourly_rate' => 100,
+        'overtime_rate' => 150,
+        'total_earned' => 600.00,
+    ]);
+
+    // Add expenses to Day 1 ($250) and Day 2 ($350) -> total expenses $600
+    BitacoraExpense::create([
+        'bitacora_id' => $bDay1->id,
+        'payment_method_id' => $paymentMethod->id,
+        'concept' => 'Materiales A',
+        'amount' => 250.00,
+        'date' => '2026-08-10',
+    ]);
+
+    BitacoraExpense::create([
+        'bitacora_id' => $bDay2->id,
+        'payment_method_id' => $paymentMethod->id,
+        'concept' => 'Materiales B',
+        'amount' => 350.00,
+        'date' => '2026-08-11',
+    ]);
+
+    $response = $this->actingAs($admin)->get('/bitacoras');
+    $response->assertStatus(200);
+    $response->assertInertia(fn ($page) => $page
+        ->component('bitacoras/Index')
+        ->has('bitacoras.data', 1)
+        ->where('bitacoras.data.0.folio_number', 'FOL-SUM-TEST-100')
+        ->where('bitacoras.data.0.dates_count', 2)
+        ->where('bitacoras.data.0.total_payroll', 1400)
+        ->where('bitacoras.data.0.total_expenses', 600)
+        ->where('bitacoras.data.0.total_cost', 2000)
+        ->has('bitacoras.data.0.bitacoras', 2)
+    );
+});
+
+test('create page with from_folio returns inherited folio data with locked fields context', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $branch = Branch::create(['name' => 'Sucursal Herencia', 'code' => 'SUC-HER', 'is_active' => true]);
+    $client = Client::create(['name' => 'Cliente Herencia', 'code' => 'CLI-HER', 'is_active' => true]);
+    $clientBranch = ClientBranch::create(['client_id' => $client->id, 'name' => 'Planta Norte', 'code' => 'PN-01', 'is_active' => true]);
+
+    $bitacora = Bitacora::create([
+        'branch_id' => $branch->id,
+        'user_id' => $admin->id,
+        'client_id' => $client->id,
+        'client_branch_id' => $clientBranch->id,
+        'folio_prefix' => 'ICC',
+        'folio_consecutive' => '55',
+        'folio_number' => 'ICC-55',
+        'date' => '2026-08-10',
+        'is_closed' => false,
+    ]);
+
+    $response = $this->actingAs($admin)->get('/bitacoras/create?from_folio=ICC-55');
+    $response->assertStatus(200);
+    $response->assertInertia(fn ($page) => $page
+        ->component('bitacoras/Create')
+        ->where('inheritedFolio.folio_number', 'ICC-55')
+        ->where('inheritedFolio.folio_prefix', 'ICC')
+        ->where('inheritedFolio.folio_consecutive', '55')
+        ->where('inheritedFolio.client_id', $client->id)
+        ->where('inheritedFolio.client_branch_id', $clientBranch->id)
+        ->where('inheritedFolio.branch_id', $branch->id)
+        ->where('inheritedFolio.user_id', $admin->id)
+        ->where('inheritedFolio.existing_dates', ['2026-08-10'])
+    );
 });
