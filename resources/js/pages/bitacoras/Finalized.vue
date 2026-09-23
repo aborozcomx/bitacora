@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { ref, computed } from 'vue';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -92,14 +92,22 @@ const props = defineProps<{
         end_date?: string;
         per_page?: number;
     };
-    kpis: {
+    isAdmin?: boolean;
+    kpis?: {
         total_folios?: number;
         total_bitacoras: number;
         total_payroll: number;
         total_expenses: number;
         total_cost: number;
-    };
+    } | null;
 }>();
+
+const page = usePage();
+const isAdmin = computed(() => {
+    if (props.isAdmin !== undefined) return props.isAdmin;
+    const user = page.props.auth?.user as any;
+    return !!(user?.isAdmin || user?.is_admin || (Array.isArray(user?.roles) && user.roles.some((r: any) => (r.name || r) === 'admin')));
+});
 
 const search = ref(props.filters.search || '');
 const branchId = ref(props.filters.branch_id || '');
@@ -172,7 +180,7 @@ const hasSundayInDates = (dates?: string[]): boolean => {
                     Folios Finalizados (Agrupados con Sumatorias)
                 </h1>
                 <p class="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-                    Consulta de folios concluidos y bloqueados contra edición, con el consolidado total de gastos.
+                    {{ isAdmin ? 'Consulta de folios concluidos y bloqueados contra edición, con el consolidado total de gastos.' : 'Consulta de folios concluidos y bloqueados contra edición.' }}
                 </p>
             </div>
 
@@ -187,13 +195,13 @@ const hasSundayInDates = (dates?: string[]): boolean => {
                 </Link>
                 <div class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs flex items-center gap-1.5">
                     <Lock class="h-4 w-4 text-amber-500" />
-                    <span>Finalizados ({{ kpis.total_folios ?? bitacoras.total ?? 0 }})</span>
+                    <span>Finalizados ({{ kpis?.total_folios ?? bitacoras.total ?? 0 }})</span>
                 </div>
             </div>
         </div>
 
-        <!-- KPI Summary Cards -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <!-- KPI Summary Cards - Admin Only -->
+        <div v-if="isAdmin && kpis" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <div class="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs flex items-center gap-3">
                 <div class="p-3 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-xl">
                     <Lock class="h-5 w-5" />

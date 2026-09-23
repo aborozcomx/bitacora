@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { ref, computed } from 'vue';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import ActionsDropdown from '@/components/ActionsDropdown.vue';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog.vue';
 import ConfirmCloseDialog from '@/components/ConfirmCloseDialog.vue';
@@ -94,6 +94,7 @@ const props = defineProps<{
         per_page?: number;
     };
     canCreate: boolean;
+    isAdmin?: boolean;
     kpis?: {
         total_folios?: number;
         total_bitacoras: number;
@@ -102,6 +103,13 @@ const props = defineProps<{
         total_cost: number;
     };
 }>();
+
+const page = usePage();
+const isAdmin = computed(() => {
+    if (props.isAdmin !== undefined) return props.isAdmin;
+    const user = page.props.auth?.user as any;
+    return !!(user?.isAdmin || user?.is_admin || (Array.isArray(user?.roles) && user.roles.some((r: any) => (r.name || r) === 'admin')));
+});
 
 const search = ref(props.filters.search || '');
 const branchId = ref(props.filters.branch_id || '');
@@ -203,7 +211,7 @@ const formatCurrency = (val?: number) => {
                     Bitácoras Operativas Agrupadas por Folio
                 </h1>
                 <p class="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-                    Control de folios abiertos, sumatorias acumuladas de nómina y gastos operativos.
+                    {{ isAdmin ? 'Control de folios abiertos, sumatorias acumuladas de nómina y gastos operativos.' : 'Control y seguimiento de bitácoras operativas por folio.' }}
                 </p>
             </div>
 
@@ -233,8 +241,8 @@ const formatCurrency = (val?: number) => {
             </div>
         </div>
 
-        <!-- KPI Summary Cards (Active Folios) -->
-        <div v-if="kpis" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <!-- KPI Summary Cards (Active Folios) - Admin Only -->
+        <div v-if="isAdmin && kpis" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <div class="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs flex items-center gap-3">
                 <div class="p-3 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-xl">
                     <FolderKanban class="h-5 w-5" />

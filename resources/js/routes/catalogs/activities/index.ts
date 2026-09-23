@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Catalog\ActivityTypeController::index
 * @see app/Http/Controllers/Catalog/ActivityTypeController.php:14
@@ -44,6 +44,43 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
 /**
+* @see \App\Http\Controllers\Catalog\ActivityTypeController::index
+* @see app/Http/Controllers/Catalog/ActivityTypeController.php:14
+* @route '/catalogs/activities'
+*/
+const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: index.url(options),
+    method: 'get',
+})
+
+/**
+* @see \App\Http\Controllers\Catalog\ActivityTypeController::index
+* @see app/Http/Controllers/Catalog/ActivityTypeController.php:14
+* @route '/catalogs/activities'
+*/
+indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: index.url(options),
+    method: 'get',
+})
+
+/**
+* @see \App\Http\Controllers\Catalog\ActivityTypeController::index
+* @see app/Http/Controllers/Catalog/ActivityTypeController.php:14
+* @route '/catalogs/activities'
+*/
+indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: index.url({
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'HEAD',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'get',
+})
+
+index.form = indexForm
+
+/**
 * @see \App\Http\Controllers\Catalog\ActivityTypeController::store
 * @see app/Http/Controllers/Catalog/ActivityTypeController.php:39
 * @route '/catalogs/activities'
@@ -76,6 +113,28 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: store.url(options),
     method: 'post',
 })
+
+/**
+* @see \App\Http\Controllers\Catalog\ActivityTypeController::store
+* @see app/Http/Controllers/Catalog/ActivityTypeController.php:39
+* @route '/catalogs/activities'
+*/
+const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: store.url(options),
+    method: 'post',
+})
+
+/**
+* @see \App\Http\Controllers\Catalog\ActivityTypeController::store
+* @see app/Http/Controllers/Catalog/ActivityTypeController.php:39
+* @route '/catalogs/activities'
+*/
+storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: store.url(options),
+    method: 'post',
+})
+
+store.form = storeForm
 
 /**
 * @see \App\Http\Controllers\Catalog\ActivityTypeController::update
@@ -140,6 +199,53 @@ update.patch = (args: { activity: string | number } | [activity: string | number
 })
 
 /**
+* @see \App\Http\Controllers\Catalog\ActivityTypeController::update
+* @see app/Http/Controllers/Catalog/ActivityTypeController.php:52
+* @route '/catalogs/activities/{activity}'
+*/
+const updateForm = (args: { activity: string | number } | [activity: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: update.url(args, {
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'PUT',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'post',
+})
+
+/**
+* @see \App\Http\Controllers\Catalog\ActivityTypeController::update
+* @see app/Http/Controllers/Catalog/ActivityTypeController.php:52
+* @route '/catalogs/activities/{activity}'
+*/
+updateForm.put = (args: { activity: string | number } | [activity: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: update.url(args, {
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'PUT',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'post',
+})
+
+/**
+* @see \App\Http\Controllers\Catalog\ActivityTypeController::update
+* @see app/Http/Controllers/Catalog/ActivityTypeController.php:52
+* @route '/catalogs/activities/{activity}'
+*/
+updateForm.patch = (args: { activity: string | number } | [activity: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: update.url(args, {
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'PATCH',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'post',
+})
+
+update.form = updateForm
+
+/**
 * @see \App\Http\Controllers\Catalog\ActivityTypeController::destroy
 * @see app/Http/Controllers/Catalog/ActivityTypeController.php:65
 * @route '/catalogs/activities/{activity}'
@@ -190,6 +296,38 @@ destroy.delete = (args: { activity: string | number } | [activity: string | numb
     url: destroy.url(args, options),
     method: 'delete',
 })
+
+/**
+* @see \App\Http\Controllers\Catalog\ActivityTypeController::destroy
+* @see app/Http/Controllers/Catalog/ActivityTypeController.php:65
+* @route '/catalogs/activities/{activity}'
+*/
+const destroyForm = (args: { activity: string | number } | [activity: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: destroy.url(args, {
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'DELETE',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'post',
+})
+
+/**
+* @see \App\Http\Controllers\Catalog\ActivityTypeController::destroy
+* @see app/Http/Controllers/Catalog/ActivityTypeController.php:65
+* @route '/catalogs/activities/{activity}'
+*/
+destroyForm.delete = (args: { activity: string | number } | [activity: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: destroy.url(args, {
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'DELETE',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'post',
+})
+
+destroy.form = destroyForm
 
 const activities = {
     index: Object.assign(index, index),

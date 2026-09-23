@@ -55,15 +55,20 @@ class BitacoraController extends Controller
                 $query->whereDate('date', '<=', $endDate);
             });
 
-        // Compute KPIs for matching active bitacoras
-        $activeBitacoraIds = (clone $filterQuery)->pluck('id');
-        $kpis = [
-            'total_folios' => (clone $filterQuery)->distinct('folio_number')->count('folio_number'),
-            'total_bitacoras' => $activeBitacoraIds->count(),
-            'total_payroll' => (float) BitacoraEmployee::whereIn('bitacora_id', $activeBitacoraIds)->sum('total_earned'),
-            'total_expenses' => (float) BitacoraExpense::whereIn('bitacora_id', $activeBitacoraIds)->sum('amount'),
-        ];
-        $kpis['total_cost'] = $kpis['total_payroll'] + $kpis['total_expenses'];
+        $isAdmin = $user->hasRole('admin');
+
+        // Compute KPIs for matching active bitacoras strictly for administrators
+        $kpis = null;
+        if ($isAdmin) {
+            $activeBitacoraIds = (clone $filterQuery)->pluck('id');
+            $kpis = [
+                'total_folios' => (clone $filterQuery)->distinct('folio_number')->count('folio_number'),
+                'total_bitacoras' => $activeBitacoraIds->count(),
+                'total_payroll' => (float) BitacoraEmployee::whereIn('bitacora_id', $activeBitacoraIds)->sum('total_earned'),
+                'total_expenses' => (float) BitacoraExpense::whereIn('bitacora_id', $activeBitacoraIds)->sum('amount'),
+            ];
+            $kpis['total_cost'] = $kpis['total_payroll'] + $kpis['total_expenses'];
+        }
 
         $perPage = $request->integer('per_page', 10);
         if (! in_array($perPage, [5, 10, 15, 25, 50, 100])) {
@@ -168,6 +173,7 @@ class BitacoraController extends Controller
             'clients' => $clients,
             'filters' => $request->only(['search', 'branch_id', 'client_id', 'start_date', 'end_date', 'per_page']),
             'canCreate' => $user->can('create', Bitacora::class),
+            'isAdmin' => $isAdmin,
             'kpis' => $kpis,
         ]);
     }
@@ -202,15 +208,20 @@ class BitacoraController extends Controller
                 $query->whereDate('date', '<=', $endDate);
             });
 
-        // Compute KPIs for matching finalized bitacoras
-        $finalizedBitacoraIds = (clone $filterQuery)->pluck('id');
-        $kpis = [
-            'total_folios' => (clone $filterQuery)->distinct('folio_number')->count('folio_number'),
-            'total_bitacoras' => $finalizedBitacoraIds->count(),
-            'total_payroll' => (float) BitacoraEmployee::whereIn('bitacora_id', $finalizedBitacoraIds)->sum('total_earned'),
-            'total_expenses' => (float) BitacoraExpense::whereIn('bitacora_id', $finalizedBitacoraIds)->sum('amount'),
-        ];
-        $kpis['total_cost'] = $kpis['total_payroll'] + $kpis['total_expenses'];
+        $isAdmin = $user->hasRole('admin');
+
+        // Compute KPIs for matching finalized bitacoras strictly for administrators
+        $kpis = null;
+        if ($isAdmin) {
+            $finalizedBitacoraIds = (clone $filterQuery)->pluck('id');
+            $kpis = [
+                'total_folios' => (clone $filterQuery)->distinct('folio_number')->count('folio_number'),
+                'total_bitacoras' => $finalizedBitacoraIds->count(),
+                'total_payroll' => (float) BitacoraEmployee::whereIn('bitacora_id', $finalizedBitacoraIds)->sum('total_earned'),
+                'total_expenses' => (float) BitacoraExpense::whereIn('bitacora_id', $finalizedBitacoraIds)->sum('amount'),
+            ];
+            $kpis['total_cost'] = $kpis['total_payroll'] + $kpis['total_expenses'];
+        }
 
         $perPage = $request->integer('per_page', 10);
         if (! in_array($perPage, [5, 10, 15, 25, 50, 100])) {
@@ -317,6 +328,7 @@ class BitacoraController extends Controller
             'branches' => $branches,
             'clients' => $clients,
             'filters' => $request->only(['search', 'branch_id', 'client_id', 'start_date', 'end_date', 'per_page']),
+            'isAdmin' => $isAdmin,
             'kpis' => $kpis,
         ]);
     }

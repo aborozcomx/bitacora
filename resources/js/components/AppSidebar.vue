@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import {
     LayoutGrid,
@@ -32,6 +33,11 @@ import { useCurrentUrl } from '@/composables/useCurrentUrl';
 
 const page = usePage();
 const { isCurrentUrl } = useCurrentUrl();
+
+const isAdmin = computed(() => {
+    const user = page.props.auth?.user as any;
+    return !!(user?.isAdmin || user?.is_admin || (Array.isArray(user?.roles) && user.roles.some((r: any) => (r.name || r) === 'admin')));
+});
 </script>
 
 <template>
@@ -77,7 +83,7 @@ const { isCurrentUrl } = useCurrentUrl();
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
-                    <SidebarMenuItem>
+                    <SidebarMenuItem v-if="isAdmin">
                         <SidebarMenuButton as-child :is-active="isCurrentUrl('/salaries')">
                             <Link href="/salaries">
                                 <Calculator class="h-4 w-4" />
@@ -85,7 +91,7 @@ const { isCurrentUrl } = useCurrentUrl();
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
-                    <SidebarMenuItem>
+                    <SidebarMenuItem v-if="isAdmin">
                         <SidebarMenuButton as-child :is-active="isCurrentUrl('/expenses')">
                             <Link href="/expenses">
                                 <Receipt class="h-4 w-4" />
@@ -97,7 +103,7 @@ const { isCurrentUrl } = useCurrentUrl();
             </SidebarGroup>
 
             <!-- Catálogos Autoadministrables -->
-            <SidebarGroup class="px-2 py-2">
+            <SidebarGroup v-if="isAdmin" class="px-2 py-2">
                 <SidebarGroupLabel>Catálogos</SidebarGroupLabel>
                 <SidebarMenu>
                     <SidebarMenuItem>
@@ -152,7 +158,7 @@ const { isCurrentUrl } = useCurrentUrl();
             </SidebarGroup>
 
             <!-- Administración de Accesos -->
-            <SidebarGroup class="px-2 py-2">
+            <SidebarGroup v-if="isAdmin" class="px-2 py-2">
                 <SidebarGroupLabel>Administración</SidebarGroupLabel>
                 <SidebarMenu>
                     <SidebarMenuItem>

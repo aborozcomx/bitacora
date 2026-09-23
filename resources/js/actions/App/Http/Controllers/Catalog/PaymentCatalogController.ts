@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Catalog\PaymentCatalogController::index
 * @see app/Http/Controllers/Catalog/PaymentCatalogController.php:17
@@ -44,6 +44,43 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
 /**
+* @see \App\Http\Controllers\Catalog\PaymentCatalogController::index
+* @see app/Http/Controllers/Catalog/PaymentCatalogController.php:17
+* @route '/catalogs/payment-methods'
+*/
+const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: index.url(options),
+    method: 'get',
+})
+
+/**
+* @see \App\Http\Controllers\Catalog\PaymentCatalogController::index
+* @see app/Http/Controllers/Catalog/PaymentCatalogController.php:17
+* @route '/catalogs/payment-methods'
+*/
+indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: index.url(options),
+    method: 'get',
+})
+
+/**
+* @see \App\Http\Controllers\Catalog\PaymentCatalogController::index
+* @see app/Http/Controllers/Catalog/PaymentCatalogController.php:17
+* @route '/catalogs/payment-methods'
+*/
+indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: index.url({
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'HEAD',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'get',
+})
+
+index.form = indexForm
+
+/**
 * @see \App\Http\Controllers\Catalog\PaymentCatalogController::storeMethod
 * @see app/Http/Controllers/Catalog/PaymentCatalogController.php:27
 * @route '/catalogs/payment-methods/method'
@@ -76,6 +113,28 @@ storeMethod.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: storeMethod.url(options),
     method: 'post',
 })
+
+/**
+* @see \App\Http\Controllers\Catalog\PaymentCatalogController::storeMethod
+* @see app/Http/Controllers/Catalog/PaymentCatalogController.php:27
+* @route '/catalogs/payment-methods/method'
+*/
+const storeMethodForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: storeMethod.url(options),
+    method: 'post',
+})
+
+/**
+* @see \App\Http\Controllers\Catalog\PaymentCatalogController::storeMethod
+* @see app/Http/Controllers/Catalog/PaymentCatalogController.php:27
+* @route '/catalogs/payment-methods/method'
+*/
+storeMethodForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: storeMethod.url(options),
+    method: 'post',
+})
+
+storeMethod.form = storeMethodForm
 
 /**
 * @see \App\Http\Controllers\Catalog\PaymentCatalogController::updateMethod
@@ -136,6 +195,38 @@ updateMethod.put = (args: { method: number | { id: number } } | [method: number 
 })
 
 /**
+* @see \App\Http\Controllers\Catalog\PaymentCatalogController::updateMethod
+* @see app/Http/Controllers/Catalog/PaymentCatalogController.php:42
+* @route '/catalogs/payment-methods/method/{method}'
+*/
+const updateMethodForm = (args: { method: number | { id: number } } | [method: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: updateMethod.url(args, {
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'PUT',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'post',
+})
+
+/**
+* @see \App\Http\Controllers\Catalog\PaymentCatalogController::updateMethod
+* @see app/Http/Controllers/Catalog/PaymentCatalogController.php:42
+* @route '/catalogs/payment-methods/method/{method}'
+*/
+updateMethodForm.put = (args: { method: number | { id: number } } | [method: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: updateMethod.url(args, {
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'PUT',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'post',
+})
+
+updateMethod.form = updateMethodForm
+
+/**
 * @see \App\Http\Controllers\Catalog\PaymentCatalogController::destroyMethod
 * @see app/Http/Controllers/Catalog/PaymentCatalogController.php:56
 * @route '/catalogs/payment-methods/method/{method}'
@@ -194,6 +285,38 @@ destroyMethod.delete = (args: { method: number | { id: number } } | [method: num
 })
 
 /**
+* @see \App\Http\Controllers\Catalog\PaymentCatalogController::destroyMethod
+* @see app/Http/Controllers/Catalog/PaymentCatalogController.php:56
+* @route '/catalogs/payment-methods/method/{method}'
+*/
+const destroyMethodForm = (args: { method: number | { id: number } } | [method: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: destroyMethod.url(args, {
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'DELETE',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'post',
+})
+
+/**
+* @see \App\Http\Controllers\Catalog\PaymentCatalogController::destroyMethod
+* @see app/Http/Controllers/Catalog/PaymentCatalogController.php:56
+* @route '/catalogs/payment-methods/method/{method}'
+*/
+destroyMethodForm.delete = (args: { method: number | { id: number } } | [method: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: destroyMethod.url(args, {
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'DELETE',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'post',
+})
+
+destroyMethod.form = destroyMethodForm
+
+/**
 * @see \App\Http\Controllers\Catalog\PaymentCatalogController::storeCardType
 * @see app/Http/Controllers/Catalog/PaymentCatalogController.php:64
 * @route '/catalogs/payment-methods/card-type'
@@ -226,6 +349,28 @@ storeCardType.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => (
     url: storeCardType.url(options),
     method: 'post',
 })
+
+/**
+* @see \App\Http\Controllers\Catalog\PaymentCatalogController::storeCardType
+* @see app/Http/Controllers/Catalog/PaymentCatalogController.php:64
+* @route '/catalogs/payment-methods/card-type'
+*/
+const storeCardTypeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: storeCardType.url(options),
+    method: 'post',
+})
+
+/**
+* @see \App\Http\Controllers\Catalog\PaymentCatalogController::storeCardType
+* @see app/Http/Controllers/Catalog/PaymentCatalogController.php:64
+* @route '/catalogs/payment-methods/card-type'
+*/
+storeCardTypeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: storeCardType.url(options),
+    method: 'post',
+})
+
+storeCardType.form = storeCardTypeForm
 
 /**
 * @see \App\Http\Controllers\Catalog\PaymentCatalogController::updateCardType
@@ -286,6 +431,38 @@ updateCardType.put = (args: { cardType: number | { id: number } } | [cardType: n
 })
 
 /**
+* @see \App\Http\Controllers\Catalog\PaymentCatalogController::updateCardType
+* @see app/Http/Controllers/Catalog/PaymentCatalogController.php:76
+* @route '/catalogs/payment-methods/card-type/{cardType}'
+*/
+const updateCardTypeForm = (args: { cardType: number | { id: number } } | [cardType: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: updateCardType.url(args, {
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'PUT',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'post',
+})
+
+/**
+* @see \App\Http\Controllers\Catalog\PaymentCatalogController::updateCardType
+* @see app/Http/Controllers/Catalog/PaymentCatalogController.php:76
+* @route '/catalogs/payment-methods/card-type/{cardType}'
+*/
+updateCardTypeForm.put = (args: { cardType: number | { id: number } } | [cardType: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: updateCardType.url(args, {
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'PUT',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'post',
+})
+
+updateCardType.form = updateCardTypeForm
+
+/**
 * @see \App\Http\Controllers\Catalog\PaymentCatalogController::destroyCardType
 * @see app/Http/Controllers/Catalog/PaymentCatalogController.php:88
 * @route '/catalogs/payment-methods/card-type/{cardType}'
@@ -344,6 +521,38 @@ destroyCardType.delete = (args: { cardType: number | { id: number } } | [cardTyp
 })
 
 /**
+* @see \App\Http\Controllers\Catalog\PaymentCatalogController::destroyCardType
+* @see app/Http/Controllers/Catalog/PaymentCatalogController.php:88
+* @route '/catalogs/payment-methods/card-type/{cardType}'
+*/
+const destroyCardTypeForm = (args: { cardType: number | { id: number } } | [cardType: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: destroyCardType.url(args, {
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'DELETE',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'post',
+})
+
+/**
+* @see \App\Http\Controllers\Catalog\PaymentCatalogController::destroyCardType
+* @see app/Http/Controllers/Catalog/PaymentCatalogController.php:88
+* @route '/catalogs/payment-methods/card-type/{cardType}'
+*/
+destroyCardTypeForm.delete = (args: { cardType: number | { id: number } } | [cardType: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: destroyCardType.url(args, {
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'DELETE',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'post',
+})
+
+destroyCardType.form = destroyCardTypeForm
+
+/**
 * @see \App\Http\Controllers\Catalog\PaymentCatalogController::storeCard
 * @see app/Http/Controllers/Catalog/PaymentCatalogController.php:96
 * @route '/catalogs/payment-methods/card'
@@ -376,6 +585,28 @@ storeCard.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: storeCard.url(options),
     method: 'post',
 })
+
+/**
+* @see \App\Http\Controllers\Catalog\PaymentCatalogController::storeCard
+* @see app/Http/Controllers/Catalog/PaymentCatalogController.php:96
+* @route '/catalogs/payment-methods/card'
+*/
+const storeCardForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: storeCard.url(options),
+    method: 'post',
+})
+
+/**
+* @see \App\Http\Controllers\Catalog\PaymentCatalogController::storeCard
+* @see app/Http/Controllers/Catalog/PaymentCatalogController.php:96
+* @route '/catalogs/payment-methods/card'
+*/
+storeCardForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: storeCard.url(options),
+    method: 'post',
+})
+
+storeCard.form = storeCardForm
 
 /**
 * @see \App\Http\Controllers\Catalog\PaymentCatalogController::updateCard
@@ -436,6 +667,38 @@ updateCard.put = (args: { card: number | { id: number } } | [card: number | { id
 })
 
 /**
+* @see \App\Http\Controllers\Catalog\PaymentCatalogController::updateCard
+* @see app/Http/Controllers/Catalog/PaymentCatalogController.php:112
+* @route '/catalogs/payment-methods/card/{card}'
+*/
+const updateCardForm = (args: { card: number | { id: number } } | [card: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: updateCard.url(args, {
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'PUT',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'post',
+})
+
+/**
+* @see \App\Http\Controllers\Catalog\PaymentCatalogController::updateCard
+* @see app/Http/Controllers/Catalog/PaymentCatalogController.php:112
+* @route '/catalogs/payment-methods/card/{card}'
+*/
+updateCardForm.put = (args: { card: number | { id: number } } | [card: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: updateCard.url(args, {
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'PUT',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'post',
+})
+
+updateCard.form = updateCardForm
+
+/**
 * @see \App\Http\Controllers\Catalog\PaymentCatalogController::destroyCard
 * @see app/Http/Controllers/Catalog/PaymentCatalogController.php:128
 * @route '/catalogs/payment-methods/card/{card}'
@@ -492,6 +755,38 @@ destroyCard.delete = (args: { card: number | { id: number } } | [card: number | 
     url: destroyCard.url(args, options),
     method: 'delete',
 })
+
+/**
+* @see \App\Http\Controllers\Catalog\PaymentCatalogController::destroyCard
+* @see app/Http/Controllers/Catalog/PaymentCatalogController.php:128
+* @route '/catalogs/payment-methods/card/{card}'
+*/
+const destroyCardForm = (args: { card: number | { id: number } } | [card: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: destroyCard.url(args, {
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'DELETE',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'post',
+})
+
+/**
+* @see \App\Http\Controllers\Catalog\PaymentCatalogController::destroyCard
+* @see app/Http/Controllers/Catalog/PaymentCatalogController.php:128
+* @route '/catalogs/payment-methods/card/{card}'
+*/
+destroyCardForm.delete = (args: { card: number | { id: number } } | [card: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: destroyCard.url(args, {
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'DELETE',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'post',
+})
+
+destroyCard.form = destroyCardForm
 
 const PaymentCatalogController = { index, storeMethod, updateMethod, destroyMethod, storeCardType, updateCardType, destroyCardType, storeCard, updateCard, destroyCard }
 

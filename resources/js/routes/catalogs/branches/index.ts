@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Catalog\BranchController::index
 * @see app/Http/Controllers/Catalog/BranchController.php:14
@@ -44,6 +44,43 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
 /**
+* @see \App\Http\Controllers\Catalog\BranchController::index
+* @see app/Http/Controllers/Catalog/BranchController.php:14
+* @route '/catalogs/branches'
+*/
+const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: index.url(options),
+    method: 'get',
+})
+
+/**
+* @see \App\Http\Controllers\Catalog\BranchController::index
+* @see app/Http/Controllers/Catalog/BranchController.php:14
+* @route '/catalogs/branches'
+*/
+indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: index.url(options),
+    method: 'get',
+})
+
+/**
+* @see \App\Http\Controllers\Catalog\BranchController::index
+* @see app/Http/Controllers/Catalog/BranchController.php:14
+* @route '/catalogs/branches'
+*/
+indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: index.url({
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'HEAD',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'get',
+})
+
+index.form = indexForm
+
+/**
 * @see \App\Http\Controllers\Catalog\BranchController::store
 * @see app/Http/Controllers/Catalog/BranchController.php:39
 * @route '/catalogs/branches'
@@ -76,6 +113,28 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: store.url(options),
     method: 'post',
 })
+
+/**
+* @see \App\Http\Controllers\Catalog\BranchController::store
+* @see app/Http/Controllers/Catalog/BranchController.php:39
+* @route '/catalogs/branches'
+*/
+const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: store.url(options),
+    method: 'post',
+})
+
+/**
+* @see \App\Http\Controllers\Catalog\BranchController::store
+* @see app/Http/Controllers/Catalog/BranchController.php:39
+* @route '/catalogs/branches'
+*/
+storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: store.url(options),
+    method: 'post',
+})
+
+store.form = storeForm
 
 /**
 * @see \App\Http\Controllers\Catalog\BranchController::update
@@ -146,6 +205,53 @@ update.patch = (args: { branch: number | { id: number } } | [branch: number | { 
 })
 
 /**
+* @see \App\Http\Controllers\Catalog\BranchController::update
+* @see app/Http/Controllers/Catalog/BranchController.php:54
+* @route '/catalogs/branches/{branch}'
+*/
+const updateForm = (args: { branch: number | { id: number } } | [branch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: update.url(args, {
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'PUT',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'post',
+})
+
+/**
+* @see \App\Http\Controllers\Catalog\BranchController::update
+* @see app/Http/Controllers/Catalog/BranchController.php:54
+* @route '/catalogs/branches/{branch}'
+*/
+updateForm.put = (args: { branch: number | { id: number } } | [branch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: update.url(args, {
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'PUT',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'post',
+})
+
+/**
+* @see \App\Http\Controllers\Catalog\BranchController::update
+* @see app/Http/Controllers/Catalog/BranchController.php:54
+* @route '/catalogs/branches/{branch}'
+*/
+updateForm.patch = (args: { branch: number | { id: number } } | [branch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: update.url(args, {
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'PATCH',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'post',
+})
+
+update.form = updateForm
+
+/**
 * @see \App\Http\Controllers\Catalog\BranchController::destroy
 * @see app/Http/Controllers/Catalog/BranchController.php:69
 * @route '/catalogs/branches/{branch}'
@@ -202,6 +308,38 @@ destroy.delete = (args: { branch: number | { id: number } } | [branch: number | 
     url: destroy.url(args, options),
     method: 'delete',
 })
+
+/**
+* @see \App\Http\Controllers\Catalog\BranchController::destroy
+* @see app/Http/Controllers/Catalog/BranchController.php:69
+* @route '/catalogs/branches/{branch}'
+*/
+const destroyForm = (args: { branch: number | { id: number } } | [branch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: destroy.url(args, {
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'DELETE',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'post',
+})
+
+/**
+* @see \App\Http\Controllers\Catalog\BranchController::destroy
+* @see app/Http/Controllers/Catalog/BranchController.php:69
+* @route '/catalogs/branches/{branch}'
+*/
+destroyForm.delete = (args: { branch: number | { id: number } } | [branch: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: destroy.url(args, {
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'DELETE',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'post',
+})
+
+destroy.form = destroyForm
 
 const branches = {
     index: Object.assign(index, index),

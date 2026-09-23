@@ -688,30 +688,48 @@ test('bitacoras index only displays active non-closed bitacoras and user scoping
         'is_closed' => false,
     ]);
 
-    // As user1: should only see $bActiveUser1
+    // As user1 (encargado): should only see $bActiveUser1, isAdmin false, and kpis null
     $response = $this->actingAs($user1)->get('/bitacoras');
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page
         ->component('bitacoras/Index')
         ->has('bitacoras.data', 1)
         ->where('bitacoras.data.0.folio_number', 'FOL-ACTIVE-U1')
+        ->where('isAdmin', false)
+        ->where('kpis', null)
     );
 
-    // As admin: should see both active bitacoras ($bActiveUser1 and $bActiveUser2), but NOT closed
+    // As admin: should see both active bitacoras ($bActiveUser1 and $bActiveUser2), isAdmin true, and kpis present
     $adminResponse = $this->actingAs($admin)->get('/bitacoras');
     $adminResponse->assertStatus(200);
     $adminResponse->assertInertia(fn ($page) => $page
         ->component('bitacoras/Index')
         ->has('bitacoras.data', 2)
+        ->where('isAdmin', true)
+        ->has('kpis')
+        ->where('kpis.total_folios', 2)
     );
 
-    // Finalized view as user1: should see $bClosedUser1
+    // Finalized view as user1 (encargado): should see $bClosedUser1, isAdmin false, and kpis null
     $finalizedResponse = $this->actingAs($user1)->get('/bitacoras-finalizadas');
     $finalizedResponse->assertStatus(200);
     $finalizedResponse->assertInertia(fn ($page) => $page
         ->component('bitacoras/Finalized')
         ->has('bitacoras.data', 1)
         ->where('bitacoras.data.0.folio_number', 'FOL-CLOSED-U1')
+        ->where('isAdmin', false)
+        ->where('kpis', null)
+    );
+
+    // Finalized view as admin: should see $bClosedUser1, isAdmin true, and kpis present
+    $adminFinalizedResponse = $this->actingAs($admin)->get('/bitacoras-finalizadas');
+    $adminFinalizedResponse->assertStatus(200);
+    $adminFinalizedResponse->assertInertia(fn ($page) => $page
+        ->component('bitacoras/Finalized')
+        ->has('bitacoras.data', 1)
+        ->where('isAdmin', true)
+        ->has('kpis')
+        ->where('kpis.total_folios', 1)
     );
 });
 
