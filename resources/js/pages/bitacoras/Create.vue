@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -65,6 +65,7 @@ interface ExistingBitacoraFolio {
     folio_number: string;
     client_id?: number;
     client_branch_id?: number | null;
+    notes?: string | null;
     client?: {
         id: number;
         name: string;
@@ -79,6 +80,7 @@ interface ExistingBitacoraRecord {
     date: string;
     client_id?: number;
     client_branch_id?: number | null;
+    notes?: string | null;
     client?: {
         id: number;
         name: string;
@@ -99,6 +101,7 @@ interface InheritedFolio {
     client_branch_id?: number | null;
     client_branch_name?: string | null;
     existing_dates: string[];
+    notes?: string | null;
 }
 
 const props = defineProps<{
@@ -113,7 +116,11 @@ const props = defineProps<{
     currentUserId?: number;
     defaultBranchId?: number;
     inheritedFolio?: InheritedFolio | null;
+    isAdmin?: boolean;
 }>();
+
+const page = usePage();
+const isAdmin = computed(() => Boolean(props.isAdmin ?? (page.props.auth?.user as any)?.isAdmin));
 
 const isInheritedMode = computed(() => Boolean(props.inheritedFolio));
 
@@ -134,7 +141,9 @@ const folioOptions = computed(() => {
     ];
 });
 
-const initialUserId = props.inheritedFolio?.user_id || props.currentUserId || (props.users.length > 0 ? props.users[0].id : '');
+const initialUserId = (!isAdmin.value && props.currentUserId)
+    ? props.currentUserId
+    : (props.inheritedFolio?.user_id || props.currentUserId || (props.users.length > 0 ? props.users[0].id : ''));
 const initialUser = props.users.find(u => u.id === Number(initialUserId));
 const initialBranchId = props.inheritedFolio?.branch_id || props.defaultBranchId || (initialUser?.branches && initialUser.branches.length > 0 ? initialUser.branches[0].id : (props.branches.length > 0 ? props.branches[0].id : ''));
 
@@ -146,7 +155,7 @@ const form = useForm({
     folio_prefix: props.inheritedFolio?.folio_prefix || props.suggestedPrefix || 'BIT',
     folio_consecutive: props.inheritedFolio?.folio_consecutive || props.suggestedConsecutive || '',
     date: today,
-    notes: '',
+    notes: props.inheritedFolio?.notes || '',
 });
 
 // Branch in function of selected user
@@ -161,9 +170,13 @@ const availableBranches = computed(() => {
     return props.branches;
 });
 
+const selectedBranch = computed(() => {
+    return props.branches.find(b => b.id === Number(form.branch_id));
+});
+
 // When user changes, update branch to one of the user's assigned branches if current branch is invalid
 watch(() => form.user_id, (newUserId) => {
-    if (isInheritedMode.value) return;
+    if (isInheritedMode.value || !isAdmin.value) return;
     if (!newUserId) return;
     const user = props.users.find(u => u.id === Number(newUserId));
     if (user && user.branches && user.branches.length > 0) {
@@ -197,14 +210,24 @@ const matchedExistingFolio = computed(() => {
     return null;
 });
 
+const isExistingFolio = computed(() => isInheritedMode.value || Boolean(matchedExistingFolio.value));
 const isClientLocked = computed(() => isInheritedMode.value || Boolean(matchedExistingFolio.value));
 
-// When an existing folio is detected, lock and auto-set client
-watch(matchedExistingFolio, (matched) => {
+let previouslyMatched = false;
+
+// When an existing folio is detected, lock and auto-set client and notes
+watch(matchedExistingFolio, (matched, oldMatched) => {
     if (isInheritedMode.value) return;
-    if (matched && matched.client_id) {
-        form.client_id = matched.client_id;
-        form.client_branch_id = matched.client_branch_id || '';
+    if (matched) {
+        if (matched.client_id) {
+            form.client_id = matched.client_id;
+            form.client_branch_id = matched.client_branch_id || '';
+        }
+        form.notes = matched.notes || '';
+        previouslyMatched = true;
+    } else if (oldMatched || previouslyMatched) {
+        form.notes = '';
+        previouslyMatched = false;
     }
 }, { immediate: true });
 
@@ -334,31 +357,49 @@ const submit = () => {
 
     <div class="p-3 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-6 w-full min-w-0">
         <!-- Header -->
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white dark:bg-zinc-900 p-4 sm:p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
-            <div class="flex items-center gap-3">
+        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 bg-white dark:bg-zinc-900 p-4 sm:p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+            <div class="flex items-start gap-3 flex-1 min-w-0">
                 <Link href="/bitacoras">
-                    <Button variant="outline" size="icon" class="h-10 w-10 rounded-xl shrink-0">
+                    <Button variant="outline" size="icon" class="h-10 w-10 rounded-xl shrink-0 mt-0.5">
                         <ArrowLeft class="h-5 w-5" />
                     </Button>
                 </Link>
-                <div>
-                    <h1 class="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                        <ClipboardList class="h-5 w-5 sm:h-6 sm:w-6 text-indigo-600 dark:text-indigo-400" />
-                        {{ isInheritedMode ? `Agregar Actividad al Folio ${inheritedFolio?.folio_number}` : 'Crear Nueva Bitácora' }}
-                    </h1>
-                    <p class="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">
+                <div class="space-y-1.5 flex-1 min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <h1 class="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                            <ClipboardList class="h-5 w-5 sm:h-6 sm:w-6 text-indigo-600 dark:text-indigo-400" />
+                            <span>{{ isInheritedMode ? 'Agregar Bitácora al Folio' : 'Crear Nueva Bitácora' }}</span>
+                        </h1>
+                        <Badge v-if="isInheritedMode" class="bg-indigo-600 text-white font-mono font-bold text-xs px-2.5 py-0.5 shadow-xs flex items-center gap-1">
+                            <Hash class="h-3 w-3" />
+                            <span>Folio: {{ inheritedFolio?.folio_number }}</span>
+                        </Badge>
+                        <Badge v-if="isInheritedMode && inheritedFolio?.branch_name" class="bg-indigo-100 text-indigo-800 dark:bg-indigo-950/80 dark:text-indigo-300 font-mono text-xs">
+                            {{ inheritedFolio.branch_name }}
+                        </Badge>
+                    </div>
+
+                    <p class="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400">
                         {{ isInheritedMode
                             ? 'Agrega una nueva fecha de servicio para este folio. Solo debes especificar la fecha; los demás datos se heredan automáticamente.'
                             : 'Genera el folio correspondiente y captura los datos generales de la bitácora.'
                         }}
                     </p>
+
+                    <!-- Comentario / Observación debajo de la bitácora -->
+                    <div v-if="form.notes || inheritedFolio?.notes" class="pt-1.5">
+                        <div class="inline-flex items-start gap-2 bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 text-amber-900 dark:text-amber-200 px-3 py-1.5 rounded-xl text-xs font-medium max-w-2xl">
+                            <FileText class="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                            <span class="whitespace-pre-line leading-relaxed">{{ form.notes || inheritedFolio?.notes }}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="text-left sm:text-right bg-zinc-50 dark:bg-zinc-800/40 p-2.5 sm:p-0 rounded-xl sm:bg-transparent">
-                <span class="text-xs font-semibold text-zinc-400 uppercase tracking-wider block">
-                    {{ isInheritedMode ? 'Folio Activo' : 'Vista previa de folio' }}
+            <div class="text-left sm:text-right bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/80 p-3 sm:px-4 sm:py-2.5 rounded-xl self-start sm:self-auto shrink-0">
+                <span class="text-[10px] font-bold uppercase text-indigo-700 dark:text-indigo-400 tracking-wider block">
+                    {{ isInheritedMode ? 'Folio Activo' : 'Folio Proyectado' }}
                 </span>
-                <span class="text-base sm:text-lg font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                <span class="text-base sm:text-lg font-mono font-extrabold text-indigo-600 dark:text-indigo-300">
                     {{ previewFolioNumber }}
                 </span>
             </div>
@@ -610,7 +651,7 @@ const submit = () => {
                                         <UserCheck class="h-4 w-4 text-indigo-600" />
                                         Usuario Encargado / Responsable *
                                     </span>
-                                    <span v-if="isInheritedMode" class="text-[10px] text-amber-600 font-semibold flex items-center gap-1">
+                                    <span v-if="isInheritedMode || !isAdmin" class="text-[10px] text-amber-600 font-semibold flex items-center gap-1">
                                         <Lock class="h-3 w-3" /> Bloqueado
                                     </span>
                                 </Label>
@@ -618,9 +659,21 @@ const submit = () => {
                                 <div v-if="isInheritedMode" class="p-3 bg-zinc-100 dark:bg-zinc-800/60 rounded-xl border border-zinc-200 dark:border-zinc-700 flex items-center justify-between">
                                     <div>
                                         <span class="font-bold text-xs text-zinc-900 dark:text-zinc-100 block">
-                                            {{ inheritedFolio?.user_name }}
+                                            {{ selectedUser?.name || inheritedFolio?.user_name }}
                                         </span>
-                                        <span class="text-[11px] text-zinc-500">Heredado del folio {{ previewFolioNumber }}</span>
+                                        <span class="text-[11px] text-zinc-500">
+                                            {{ !isAdmin ? 'Asignado a tu usuario' : `Heredado del folio ${previewFolioNumber}` }}
+                                        </span>
+                                    </div>
+                                    <Lock class="h-4 w-4 text-zinc-400" />
+                                </div>
+
+                                <div v-else-if="!isAdmin" class="p-3 bg-zinc-100 dark:bg-zinc-800/60 rounded-xl border border-zinc-200 dark:border-zinc-700 flex items-center justify-between">
+                                    <div>
+                                        <span class="font-bold text-xs text-zinc-900 dark:text-zinc-100 block">
+                                            {{ selectedUser?.name }}
+                                        </span>
+                                        <span class="text-[11px] text-zinc-500">Asignado a tu usuario (no modificable)</span>
                                     </div>
                                     <Lock class="h-4 w-4 text-zinc-400" />
                                 </div>
@@ -647,7 +700,7 @@ const submit = () => {
                                         <Building2 class="h-4 w-4 text-indigo-600" />
                                         Sucursal Operativa (ICC) *
                                     </span>
-                                    <span v-if="isInheritedMode" class="text-[10px] text-amber-600 font-semibold flex items-center gap-1">
+                                    <span v-if="isInheritedMode || !isAdmin" class="text-[10px] text-amber-600 font-semibold flex items-center gap-1">
                                         <Lock class="h-3 w-3" /> Bloqueado
                                     </span>
                                     <span v-else-if="selectedUser?.branches?.length" class="text-[10px] text-indigo-600 dark:text-indigo-400 font-normal">
@@ -658,9 +711,19 @@ const submit = () => {
                                 <div v-if="isInheritedMode" class="p-3 bg-zinc-100 dark:bg-zinc-800/60 rounded-xl border border-zinc-200 dark:border-zinc-700 flex items-center justify-between">
                                     <div>
                                         <span class="font-bold text-xs text-zinc-900 dark:text-zinc-100 block">
-                                            {{ inheritedFolio?.branch_name }}
+                                            {{ selectedBranch?.name || inheritedFolio?.branch_name }}
                                         </span>
                                         <span class="text-[11px] text-zinc-500">Heredada del folio {{ previewFolioNumber }}</span>
+                                    </div>
+                                    <Lock class="h-4 w-4 text-zinc-400" />
+                                </div>
+
+                                <div v-else-if="!isAdmin" class="p-3 bg-zinc-100 dark:bg-zinc-800/60 rounded-xl border border-zinc-200 dark:border-zinc-700 flex items-center justify-between">
+                                    <div>
+                                        <span class="font-bold text-xs text-zinc-900 dark:text-zinc-100 block">
+                                            {{ selectedBranch?.name }}
+                                        </span>
+                                        <span class="text-[11px] text-zinc-500">Sucursal asignada a tu usuario</span>
                                     </div>
                                     <Lock class="h-4 w-4 text-zinc-400" />
                                 </div>
@@ -840,17 +903,39 @@ const submit = () => {
                     <!-- SECTION 4: NOTAS U OBSERVACIONES -->
                     <!-- ======================================================== -->
                     <div class="space-y-1.5 pt-4 border-t border-zinc-100 dark:border-zinc-800">
-                        <Label for="notes" class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                            Notas u Observaciones Generales (Opcional)
+                        <Label for="notes" class="text-xs font-semibold text-zinc-700 dark:text-zinc-300 flex items-center justify-between">
+                            <span>Notas u Observaciones Generales</span>
+                            <span v-if="isExistingFolio" class="text-[10px] text-amber-600 font-semibold flex items-center gap-1">
+                                <Lock class="h-3 w-3" /> Heredado del folio (Bloqueado)
+                            </span>
+                            <span v-else class="text-[10px] text-zinc-400 font-normal">
+                                Opcional
+                            </span>
                         </Label>
-                        <textarea
-                            id="notes"
-                            v-model="form.notes"
-                            rows="3"
-                            placeholder="Añade cualquier instrucción inicial, orden de compra o detalle relevante..."
-                            class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3 text-sm focus:ring-2 focus:ring-indigo-500"
-                        ></textarea>
-                        <span v-if="form.errors.notes" class="text-xs text-red-500 font-medium">{{ form.errors.notes }}</span>
+
+                        <div v-if="isExistingFolio" class="p-3 bg-zinc-100 dark:bg-zinc-800/60 rounded-xl border border-zinc-200 dark:border-zinc-700 flex items-start justify-between gap-3">
+                            <div class="space-y-0.5">
+                                <p v-if="form.notes || inheritedFolio?.notes" class="text-xs text-zinc-800 dark:text-zinc-200 whitespace-pre-line font-medium leading-relaxed">
+                                    {{ form.notes || inheritedFolio?.notes }}
+                                </p>
+                                <p v-else class="text-xs text-zinc-400 italic">
+                                    Sin observaciones registradas en el folio original.
+                                </p>
+                                <span class="text-[11px] text-zinc-500 block">Comentario fijado por folio {{ previewFolioNumber }} (no editable)</span>
+                            </div>
+                            <Lock class="h-4 w-4 text-zinc-400 shrink-0 mt-0.5" />
+                        </div>
+
+                        <template v-else>
+                            <textarea
+                                id="notes"
+                                v-model="form.notes"
+                                rows="3"
+                                placeholder="Añade cualquier instrucción inicial, orden de compra o detalle relevante..."
+                                class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3 text-sm focus:ring-2 focus:ring-indigo-500"
+                            ></textarea>
+                            <span v-if="form.errors.notes" class="text-xs text-red-500 font-medium">{{ form.errors.notes }}</span>
+                        </template>
                     </div>
                 </CardContent>
             </Card>

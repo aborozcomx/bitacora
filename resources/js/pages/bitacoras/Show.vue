@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { ref, computed } from 'vue';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -68,6 +68,9 @@ interface Bitacora {
 const props = defineProps<{
     bitacora: Bitacora;
 }>();
+
+const page = usePage();
+const isAdmin = computed(() => Boolean((page.props.auth?.user as any)?.isAdmin));
 
 const showCloseDialog = ref(false);
 const isClosing = ref(false);
@@ -285,7 +288,7 @@ const print = () => {
                                             <th class="py-1.5 px-3 text-center">Estado</th>
                                             <th class="py-1.5 px-3 text-center">Horas Normales</th>
                                             <th class="py-1.5 px-3 text-center">Horas Extras</th>
-                                            <th class="py-1.5 px-3 text-right">Subtotal</th>
+                                            <th v-if="isAdmin" class="py-1.5 px-3 text-right">Subtotal</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
@@ -312,10 +315,10 @@ const print = () => {
                                             </td>
                                             <td class="py-2 px-3 text-center font-mono">{{ emp.is_absent ? '-' : `${emp.hours_worked} hrs` }}</td>
                                             <td class="py-2 px-3 text-center font-mono">{{ emp.is_absent ? '-' : `${emp.overtime_hours} hrs` }}</td>
-                                            <td class="py-2 px-3 text-right font-mono font-bold">{{ formatCurrency(emp.total_earned) }}</td>
+                                            <td v-if="isAdmin" class="py-2 px-3 text-right font-mono font-bold">{{ formatCurrency(emp.total_earned) }}</td>
                                         </tr>
                                         <tr v-if="!act.employees || act.employees.length === 0">
-                                            <td colspan="5" class="py-2 text-center text-zinc-400 italic">No se asignó personal.</td>
+                                            <td :colspan="isAdmin ? 5 : 4" class="py-2 text-center text-zinc-400 italic">No se asignó personal.</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -366,7 +369,7 @@ const print = () => {
             </div>
 
             <!-- Financial Summary Box -->
-            <div class="border-t-2 border-zinc-200 dark:border-zinc-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div v-if="isAdmin" class="border-t-2 border-zinc-200 dark:border-zinc-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div class="flex items-center gap-6 text-xs sm:text-sm">
                     <div>
                         <span class="text-zinc-400 text-[10px] uppercase font-bold block">Total Nómina</span>
@@ -381,6 +384,14 @@ const print = () => {
                 <div class="bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700 px-6 py-3 rounded-2xl text-right w-full sm:w-auto">
                     <span class="text-xs uppercase font-bold text-emerald-800 dark:text-emerald-300 block">Costo Total de Bitácora</span>
                     <span class="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">{{ formatCurrency(grandTotal) }}</span>
+                </div>
+            </div>
+            <div v-else class="border-t-2 border-zinc-200 dark:border-zinc-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-6 text-xs sm:text-sm">
+                    <div>
+                        <span class="text-zinc-400 text-[10px] uppercase font-bold block">Total Gastos</span>
+                        <span class="font-bold text-zinc-900 dark:text-zinc-100 font-mono">{{ formatCurrency(totalExpenses) }}</span>
+                    </div>
                 </div>
             </div>
         </div>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,6 +25,7 @@ import {
     CheckCircle2,
     ShieldAlert,
     FileText,
+    Hash,
     Lock,
     Pencil,
     ChevronDown,
@@ -119,6 +120,9 @@ const props = defineProps<{
     isAdmin: boolean;
 }>();
 
+const page = usePage();
+const isAdmin = computed(() => Boolean(props.isAdmin ?? (page.props.auth?.user as any)?.isAdmin));
+
 const today = new Date().toISOString().substring(0, 10);
 const showGeneralDataEdit = ref(false);
 
@@ -181,7 +185,12 @@ const availableBranches = computed(() => {
     return props.branches;
 });
 
+const selectedBranch = computed(() => {
+    return props.branches.find(b => b.id === Number(form.branch_id));
+});
+
 watch(() => form.user_id, (newUserId) => {
+    if (!isAdmin.value) return;
     if (!newUserId) return;
     const user = props.users.find(u => u.id === Number(newUserId));
     if (user && user.branches && user.branches.length > 0) {
@@ -443,34 +452,56 @@ const submit = () => {
 
     <div class="p-3 sm:p-6 lg:p-8 max-w-6xl mx-auto space-y-6 w-full min-w-0">
         <!-- Header -->
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white dark:bg-zinc-900 p-4 sm:p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
-            <div class="flex items-center gap-3">
+        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 bg-white dark:bg-zinc-900 p-4 sm:p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+            <div class="flex items-start gap-3 flex-1 min-w-0">
                 <Link href="/bitacoras">
-                    <Button variant="outline" size="icon" class="h-10 w-10 rounded-xl shrink-0">
+                    <Button variant="outline" size="icon" class="h-10 w-10 rounded-xl shrink-0 mt-0.5">
                         <ArrowLeft class="h-5 w-5" />
                     </Button>
                 </Link>
-                <div>
+                <div class="space-y-1.5 flex-1 min-w-0">
                     <div class="flex items-center gap-2 flex-wrap">
                         <h1 class="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                             <ClipboardList class="h-5 w-5 sm:h-6 sm:w-6 text-indigo-600 dark:text-indigo-400" />
-                            Bitácora {{ bitacora.folio_number }}
+                            <span>Bitácora</span>
+                            <span class="text-sm font-semibold text-zinc-600 dark:text-zinc-400 font-mono bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-lg border border-zinc-200 dark:border-zinc-700">#{{ bitacora.id }}</span>
                         </h1>
+                        <Badge class="bg-indigo-600 text-white font-mono font-bold text-xs px-2.5 py-0.5 shadow-xs flex items-center gap-1">
+                            <Hash class="h-3 w-3" />
+                            <span>Folio: {{ bitacora.folio_number }}</span>
+                        </Badge>
+                        <Badge variant="outline" class="text-zinc-700 dark:text-zinc-300 font-mono text-xs flex items-center gap-1">
+                            <Calendar class="h-3 w-3 text-zinc-400" />
+                            <span>{{ bitacora.date }}</span>
+                        </Badge>
                         <Badge class="bg-indigo-100 text-indigo-800 dark:bg-indigo-950/80 dark:text-indigo-300 font-mono text-xs">
                             {{ bitacora.branch?.name }}
                         </Badge>
                     </div>
-                    <p class="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">
+
+                    <p class="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400">
                         Captura las actividades realizadas, personal asignado y gastos de cada actividad.
                     </p>
+
+                    <!-- Comentario / Observación debajo de la bitácora -->
+                    <div v-if="form.notes || bitacora.notes" class="pt-1.5">
+                        <div class="inline-flex items-start gap-2 bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 text-amber-900 dark:text-amber-200 px-3 py-1.5 rounded-xl text-xs font-medium max-w-2xl">
+                            <FileText class="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                            <span class="whitespace-pre-line leading-relaxed">{{ form.notes || bitacora.notes }}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Financial Summary Header Pills -->
-            <div class="flex items-center gap-2 self-start sm:self-auto">
-                <div class="bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 px-3 py-1.5 rounded-xl text-left sm:text-right">
-                    <span class="text-[10px] font-bold uppercase text-emerald-700 dark:text-emerald-400 block">Total Bitácora</span>
-                    <span class="text-base font-extrabold text-emerald-600 dark:text-emerald-300 font-mono">{{ formatCurrency(grandTotal) }}</span>
+            <!-- Financial Summary Header Pills & Folio Identificador -->
+            <div class="flex items-center gap-2.5 self-start sm:self-auto shrink-0 flex-wrap">
+                <div class="bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/80 px-3.5 py-1.5 rounded-xl text-left sm:text-right">
+                    <span class="text-[10px] font-bold uppercase text-indigo-700 dark:text-indigo-400 tracking-wider block">Folio Activo</span>
+                    <span class="text-base sm:text-lg font-mono font-extrabold text-indigo-600 dark:text-indigo-300">{{ bitacora.folio_number }}</span>
+                </div>
+                <div v-if="isAdmin" class="bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 px-3.5 py-1.5 rounded-xl text-left sm:text-right">
+                    <span class="text-[10px] font-bold uppercase text-emerald-700 dark:text-emerald-400 tracking-wider block">Total Bitácora</span>
+                    <span class="text-base sm:text-lg font-extrabold text-emerald-600 dark:text-emerald-300 font-mono">{{ formatCurrency(grandTotal) }}</span>
                 </div>
             </div>
         </div>
@@ -551,11 +582,23 @@ const submit = () => {
 
                     <!-- Usuario Encargado -->
                     <div class="space-y-1.5">
-                        <Label for="edit_user_id" class="text-xs font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
-                            <UserCheck class="h-4 w-4 text-indigo-600" />
-                            Usuario Responsable *
+                        <Label for="edit_user_id" class="text-xs font-semibold text-zinc-700 dark:text-zinc-300 flex items-center justify-between">
+                            <span class="flex items-center gap-1.5">
+                                <UserCheck class="h-4 w-4 text-indigo-600" />
+                                Usuario Responsable *
+                            </span>
+                            <span v-if="!isAdmin" class="text-[10px] text-amber-600 font-semibold flex items-center gap-1">
+                                <Lock class="h-3 w-3" /> Bloqueado
+                            </span>
                         </Label>
+                        <div v-if="!isAdmin" class="p-2.5 bg-zinc-100 dark:bg-zinc-800/60 rounded-xl border border-zinc-200 dark:border-zinc-700 flex items-center justify-between">
+                            <span class="font-bold text-xs text-zinc-800 dark:text-zinc-200">
+                                {{ selectedUser?.name || bitacora.user?.name }}
+                            </span>
+                            <Lock class="h-3.5 w-3.5 text-zinc-400" />
+                        </div>
                         <select
+                            v-else
                             id="edit_user_id"
                             v-model="form.user_id"
                             required
@@ -574,11 +617,21 @@ const submit = () => {
                                 <Building2 class="h-4 w-4 text-indigo-600" />
                                 Sucursal Operativa *
                             </span>
-                            <span v-if="selectedUser?.branches?.length" class="text-[10px] text-indigo-600">
+                            <span v-if="!isAdmin" class="text-[10px] text-amber-600 font-semibold flex items-center gap-1">
+                                <Lock class="h-3 w-3" /> Bloqueado
+                            </span>
+                            <span v-else-if="selectedUser?.branches?.length" class="text-[10px] text-indigo-600">
                                 Según usuario
                             </span>
                         </Label>
+                        <div v-if="!isAdmin" class="p-2.5 bg-zinc-100 dark:bg-zinc-800/60 rounded-xl border border-zinc-200 dark:border-zinc-700 flex items-center justify-between">
+                            <span class="font-bold text-xs text-zinc-800 dark:text-zinc-200">
+                                {{ selectedBranch?.name || bitacora.branch?.name }}
+                            </span>
+                            <Lock class="h-3.5 w-3.5 text-zinc-400" />
+                        </div>
                         <select
+                            v-else
                             id="edit_branch_id"
                             v-model="form.branch_id"
                             required
@@ -823,7 +876,7 @@ const submit = () => {
                                             <th class="py-2 px-3 text-center">Estado</th>
                                             <th class="py-2 px-3 text-center">Horas Normales</th>
                                             <th class="py-2 px-3 text-center">Horas Extras</th>
-                                            <th class="py-2 px-3 text-right">Subtotal</th>
+                                            <th v-if="isAdmin" class="py-2 px-3 text-right">Subtotal</th>
                                             <th class="py-2 px-2 text-center w-10"></th>
                                         </tr>
                                     </thead>
@@ -923,7 +976,7 @@ const submit = () => {
                                             </td>
 
                                             <!-- Subtotal -->
-                                            <td class="py-2 px-3 text-right font-mono font-bold text-zinc-900 dark:text-zinc-100 min-w-[100px]">
+                                            <td v-if="isAdmin" class="py-2 px-3 text-right font-mono font-bold text-zinc-900 dark:text-zinc-100 min-w-[100px]">
                                                 {{ formatCurrency(calcEmployeeRowTotal(empRow)) }}
                                             </td>
 
@@ -942,7 +995,7 @@ const submit = () => {
                                         </tr>
 
                                         <tr v-if="act.employees.length === 0">
-                                            <td colspan="6" class="py-3 text-center text-zinc-400 italic">
+                                            <td :colspan="isAdmin ? 6 : 5" class="py-3 text-center text-zinc-400 italic">
                                                 No hay personal asignado a esta actividad aún.
                                             </td>
                                         </tr>
@@ -1071,24 +1124,30 @@ const submit = () => {
                 </div>
             </div>
 
-            <!-- Notes Card -->
+            <!-- Notes Card (Locked / Non-editable) -->
             <Card class="border-zinc-200 dark:border-zinc-800 shadow-sm">
-                <CardHeader class="py-3 px-6 border-b border-zinc-100 dark:border-zinc-800">
-                    <CardTitle class="text-sm font-semibold">Notas u Observaciones Finales</CardTitle>
+                <CardHeader class="py-3 px-6 border-b border-zinc-100 dark:border-zinc-800 flex flex-row items-center justify-between">
+                    <CardTitle class="text-sm font-semibold flex items-center gap-2">
+                        <FileText class="h-4 w-4 text-indigo-600" />
+                        Notas u Observaciones Finales
+                    </CardTitle>
+                    <Badge variant="outline" class="text-[10px] text-amber-700 dark:text-amber-300 gap-1 font-semibold py-0.5 px-2 bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800">
+                        <Lock class="h-3 w-3 text-amber-600 dark:text-amber-400" /> No editable
+                    </Badge>
                 </CardHeader>
                 <CardContent class="p-4">
-                    <textarea
-                        v-model="form.notes"
-                        rows="2"
-                        placeholder="Observaciones adicionales sobre la ejecución de la bitácora..."
-                        class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3 text-xs focus:ring-2 focus:ring-indigo-500"
-                    ></textarea>
+                    <div v-if="form.notes || bitacora.notes" class="p-3 bg-zinc-50 dark:bg-zinc-800/40 rounded-xl border border-zinc-200/80 dark:border-zinc-800 text-xs text-zinc-700 dark:text-zinc-300 whitespace-pre-line font-medium leading-relaxed">
+                        {{ form.notes || bitacora.notes }}
+                    </div>
+                    <div v-else class="p-3 bg-zinc-50 dark:bg-zinc-800/40 rounded-xl border border-zinc-200/80 dark:border-zinc-800 text-xs text-zinc-400 italic">
+                        Sin observaciones registradas para este folio.
+                    </div>
                 </CardContent>
             </Card>
 
             <!-- Bottom Floating Action Bar -->
             <div class="sticky bottom-4 z-20 bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div class="flex items-center gap-6 text-xs sm:text-sm">
+                <div v-if="isAdmin" class="flex items-center gap-6 text-xs sm:text-sm">
                     <div>
                         <span class="text-zinc-400 block text-[10px] font-bold uppercase">Total Nómina</span>
                         <span class="font-bold text-zinc-900 dark:text-zinc-100 font-mono">{{ formatCurrency(totalPayroll) }}</span>
@@ -1100,6 +1159,12 @@ const submit = () => {
                     <div class="border-l border-zinc-200 dark:border-zinc-700 pl-6">
                         <span class="text-emerald-600 dark:text-emerald-400 block text-[10px] font-bold uppercase">Gran Total</span>
                         <span class="text-base font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">{{ formatCurrency(grandTotal) }}</span>
+                    </div>
+                </div>
+                <div v-else class="flex items-center gap-6 text-xs sm:text-sm">
+                    <div>
+                        <span class="text-zinc-400 block text-[10px] font-bold uppercase">Total Gastos</span>
+                        <span class="font-bold text-zinc-900 dark:text-zinc-100 font-mono">{{ formatCurrency(totalExpenses) }}</span>
                     </div>
                 </div>
 

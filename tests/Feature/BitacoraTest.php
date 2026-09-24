@@ -844,6 +844,7 @@ test('create page with from_folio returns inherited folio data with locked field
         'folio_consecutive' => '55',
         'folio_number' => 'ICC-55',
         'date' => '2026-08-10',
+        'notes' => 'Observaciones iniciales del servicio',
         'is_closed' => false,
     ]);
 
@@ -859,5 +860,210 @@ test('create page with from_folio returns inherited folio data with locked field
         ->where('inheritedFolio.branch_id', $branch->id)
         ->where('inheritedFolio.user_id', $admin->id)
         ->where('inheritedFolio.existing_dates', ['2026-08-10'])
+        ->where('inheritedFolio.notes', 'Observaciones iniciales del servicio')
     );
+});
+
+test('create and edit views expose isAdmin flag according to user role', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $encargado = User::factory()->create();
+    $encargado->assignRole('encargado');
+
+    $branch = Branch::create(['name' => 'Sucursal Sur', 'code' => 'SUR', 'is_active' => true]);
+    $client = Client::create(['name' => 'Cliente Gamma', 'code' => 'CLI-G', 'is_active' => true]);
+    $encargado->branches()->attach($branch);
+
+    $bitacora = Bitacora::create([
+        'branch_id' => $branch->id,
+        'user_id' => $encargado->id,
+        'client_id' => $client->id,
+        'folio_number' => 'BIT-999',
+        'folio_prefix' => 'BIT',
+        'folio_consecutive' => '999',
+        'date' => '2026-08-20',
+        'is_closed' => false,
+    ]);
+
+    // Admin in create
+    $this->actingAs($admin)->get('/bitacoras/create')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('bitacoras/Create')
+            ->where('isAdmin', true)
+        );
+
+    // Encargado in create
+    $this->actingAs($encargado)->get('/bitacoras/create')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('bitacoras/Create')
+            ->where('isAdmin', false)
+            ->where('currentUserId', $encargado->id)
+            ->where('defaultBranchId', $branch->id)
+        );
+
+    // Admin in edit
+    $this->actingAs($admin)->get("/bitacoras/{$bitacora->id}/edit")
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('bitacoras/Edit')
+            ->where('isAdmin', true)
+        );
+
+    // Encargado in edit
+    $this->actingAs($encargado)->get("/bitacoras/{$bitacora->id}/edit")
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('bitacoras/Edit')
+            ->where('isAdmin', false)
+        );
+});
+
+test('encargado cannot spoof user_id when creating bitacora', function () {
+    $encargado = User::factory()->create();
+    $encargado->assignRole('encargado');
+
+    $otherUser = User::factory()->create();
+
+    $branch = Branch::create(['name' => 'Sucursal Este', 'code' => 'EST', 'is_active' => true]);
+    $client = Client::create(['name' => 'Cliente Delta', 'code' => 'CLI-D', 'is_active' => true]);
+    $encargado->branches()->attach($branch);
+
+    $response = $this->actingAs($encargado)->post('/bitacoras', [
+        'branch_id' => $branch->id,
+        'user_id' => $otherUser->id, // Attempting to assign to another user
+        'client_id' => $client->id,
+        'folio_prefix' => 'BIT',
+        'folio_consecutive' => '888',
+        'date' => '2026-08-21',
+    ]);
+
+    $bitacora = Bitacora::where('folio_number', 'BIT-888')->first();
+    expect($bitacora)->not->toBeNull();
+    // Must be forced to the encargado's id
+    expect($bitacora->user_id)->toBe($encargado->id);
+});
+
+test('encargado cannot alter user_id or branch_id when updating bitacora', function () {
+    $branchA = Branch::create(['name' => 'Sucursal A', 'code' => 'SUC-A', 'is_active' => true]);
+    $branchB = Branch::create(['name' => 'Sucursal B', 'code' => 'SUC-B', 'is_active' => true]);
+    $client = Client::create(['name' => 'Cliente Epsilon', 'code' => 'CLI-E', 'is_active' => true]);
+
+    $encargado = User::factory()->create();
+    $encargado->assignRole('encargado');
+    $encargado->branches()->attach($branchA);
+
+    $otherUser = User::factory()->create();
+
+    $activityType = ActivityType::create(['name' => 'Revisión', 'is_active' => true]);
+
+    $bitacora = Bitacora::create([
+        'branch_id' => $branchA->id,
+        'user_id' => $encargado->id,
+        'client_id' => $client->id,
+        'folio_number' => 'BIT-777',
+        'date' => '2026-08-22',
+    ]);
+
+    $response = $this->actingAs($encargado)->put("/bitacoras/{$bitacora->id}", [
+        'user_id' => $otherUser->id,
+        'branch_id' => $branchB->id,
+        'notes' => 'Actualizando actividades',
+        'activities' => [
+            [
+                'date' => '2026-08-22',
+                'activity_type_id' => $activityType->id,
+                'description' => 'Revisión de instalaciones',
+                'employees' => [],
+                'expenses' => [],
+            ],
+        ],
+    ]);
+
+    $bitacora->refresh();
+    // Must preserve original user_id and branch_id
+    expect($bitacora->user_id)->toBe($encargado->id)
+        ->and($bitacora->branch_id)->toBe($branchA->id);
+});
+
+test('existing folio notes are exposed to create view and inherited on store', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $branch = Branch::create(['name' => 'Sucursal Notas', 'code' => 'SUC-N', 'is_active' => true]);
+    $client = Client::create(['name' => 'Cliente Notas', 'code' => 'CLI-N', 'is_active' => true]);
+
+    $originalBitacora = Bitacora::create([
+        'branch_id' => $branch->id,
+        'user_id' => $admin->id,
+        'client_id' => $client->id,
+        'folio_prefix' => 'BIT',
+        'folio_consecutive' => '100',
+        'folio_number' => 'BIT-100',
+        'date' => '2026-08-01',
+        'notes' => 'Comentario original fijo e inmutable del folio',
+        'is_closed' => false,
+    ]);
+
+    // 1. In create view, existingBitacoraFolios must include the notes of BIT-100
+    $response = $this->actingAs($admin)->get('/bitacoras/create');
+    $response->assertOk();
+    $response->assertInertia(function ($page) {
+        $existing = collect($page->toArray()['props']['existingBitacoraFolios']);
+        $folio100 = $existing->firstWhere('folio_number', 'BIT-100');
+        expect($folio100)->not->toBeNull()
+            ->and($folio100['notes'])->toBe('Comentario original fijo e inmutable del folio');
+    });
+
+    // 2. When creating a new date for BIT-100, notes must be inherited even if empty or different notes are sent
+    $storeResponse = $this->actingAs($admin)->post('/bitacoras', [
+        'branch_id' => $branch->id,
+        'user_id' => $admin->id,
+        'client_id' => $client->id,
+        'folio_prefix' => 'BIT',
+        'folio_consecutive' => '100',
+        'date' => '2026-08-02',
+        'notes' => 'Intento de modificar comentario',
+    ]);
+
+    $newBitacora = Bitacora::where('folio_number', 'BIT-100')->where('date', '2026-08-02')->first();
+    expect($newBitacora)->not->toBeNull()
+        ->and($newBitacora->notes)->toBe('Comentario original fijo e inmutable del folio');
+});
+
+test('updating bitacora does not allow modifying notes', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $branch = Branch::create(['name' => 'Sucursal Fix', 'code' => 'SUC-F', 'is_active' => true]);
+    $client = Client::create(['name' => 'Cliente Fix', 'code' => 'CLI-F', 'is_active' => true]);
+    $activityType = ActivityType::create(['name' => 'Prueba', 'is_active' => true]);
+
+    $bitacora = Bitacora::create([
+        'branch_id' => $branch->id,
+        'user_id' => $admin->id,
+        'client_id' => $client->id,
+        'folio_number' => 'BIT-200',
+        'date' => '2026-08-05',
+        'notes' => 'Comentario sagrado de la bitacora',
+        'is_closed' => false,
+    ]);
+
+    $this->actingAs($admin)->put("/bitacoras/{$bitacora->id}", [
+        'notes' => 'Intento de cambiar notas al editar',
+        'activities' => [
+            [
+                'date' => '2026-08-05',
+                'activity_type_id' => $activityType->id,
+                'description' => 'Actividad de prueba',
+                'employees' => [],
+                'expenses' => [],
+            ],
+        ],
+    ]);
+
+    $bitacora->refresh();
+    expect($bitacora->notes)->toBe('Comentario sagrado de la bitacora');
 });

@@ -368,16 +368,34 @@ class BitacoraController extends Controller
         $suggestedPrefix = $defaultFolio ? $defaultFolio->name : 'BIT';
         $suggestedConsecutive = (string) (($defaultFolio ? $defaultFolio->current_consecutive : 0) + 1);
 
+        $folioNotesMap = Bitacora::where('is_closed', false)
+            ->whereNotNull('notes')
+            ->where('notes', '!=', '')
+            ->orderBy('date', 'desc')
+            ->pluck('notes', 'folio_number')
+            ->all();
+
         $existingBitacoraFolios = Bitacora::where('is_closed', false)
             ->with(['client:id,name,code', 'clientBranch:id,name,code'])
-            ->select('folio_prefix', 'folio_consecutive', 'folio_number', 'client_id', 'client_branch_id', 'branch_id')
+            ->select('folio_prefix', 'folio_consecutive', 'folio_number', 'client_id', 'client_branch_id', 'branch_id', 'notes')
             ->get()
             ->unique('folio_number')
+            ->map(fn ($b) => [
+                'folio_prefix' => $b->folio_prefix,
+                'folio_consecutive' => (string) $b->folio_consecutive,
+                'folio_number' => $b->folio_number,
+                'client_id' => $b->client_id,
+                'client_branch_id' => $b->client_branch_id,
+                'branch_id' => $b->branch_id,
+                'client' => $b->client,
+                'client_branch' => $b->clientBranch,
+                'notes' => $folioNotesMap[$b->folio_number] ?? ($b->notes ?? null),
+            ])
             ->values();
 
         $existingBitacoras = Bitacora::where('is_closed', false)
             ->with(['client:id,name,code', 'clientBranch:id,name,code'])
-            ->select('folio_prefix', 'folio_consecutive', 'folio_number', 'client_id', 'client_branch_id', 'branch_id', 'date')
+            ->select('folio_prefix', 'folio_consecutive', 'folio_number', 'client_id', 'client_branch_id', 'branch_id', 'date', 'notes')
             ->get()
             ->map(fn ($b) => [
                 'folio_prefix' => $b->folio_prefix,
@@ -390,6 +408,7 @@ class BitacoraController extends Controller
                 'client_branch_name' => $b->clientBranch?->name,
                 'branch_id' => $b->branch_id,
                 'date' => is_string($b->date) ? substr($b->date, 0, 10) : $b->date->format('Y-m-d'),
+                'notes' => $folioNotesMap[$b->folio_number] ?? ($b->notes ?? null),
             ]);
 
         $inheritedFolio = null;
@@ -422,6 +441,7 @@ class BitacoraController extends Controller
                     'client_branch_id' => $sourceBitacora->client_branch_id,
                     'client_branch_name' => $sourceBitacora->clientBranch?->name ?? 'Matriz / General',
                     'existing_dates' => $existingDates,
+                    'notes' => $sourceBitacora->notes ?? Bitacora::where('folio_number', $fromFolio)->whereNotNull('notes')->where('notes', '!=', '')->latest('date')->value('notes'),
                 ];
             }
         }
@@ -438,6 +458,7 @@ class BitacoraController extends Controller
             'currentUserId' => $user?->id,
             'defaultBranchId' => $user?->branches?->first()?->id ?? ($branches->first()?->id ?? null),
             'inheritedFolio' => $inheritedFolio,
+            'isAdmin' => $user?->hasRole('admin') ?? false,
         ]);
     }
 
@@ -493,8 +514,13 @@ class BitacoraController extends Controller
             ]);
         }
 
-        // When reusing an existing folio, the client and client branch must match the existing folio
-        $existingWithFolio = Bitacora::where('folio_number', $folioNumber)->with(['client', 'clientBranch'])->first();
+        // When reusing an existing folio, the client, client branch and notes are inherited from the existing folio
+        $existingWithFolio = Bitacora::where('folio_number', $folioNumber)
+            ->whereNotNull('notes')
+            ->where('notes', '!=', '')
+            ->latest('date')
+            ->first() ?? Bitacora::where('folio_number', $folioNumber)->first();
+
         if ($existingWithFolio) {
             if ($existingWithFolio->client_id != $validated['client_id']) {
                 $existingClientName = $existingWithFolio->client?->name ?? 'el cliente previo';
@@ -513,6 +539,12 @@ class BitacoraController extends Controller
             }
         }
 
+        if (! $request->user()->hasRole('admin')) {
+            $validated['user_id'] = $request->user()->id;
+        }
+
+        $finalNotes = $existingWithFolio ? $existingWithFolio->notes : ($validated['notes'] ?? null);
+
         $bitacora = Bitacora::create([
             'branch_id' => $validated['branch_id'],
             'user_id' => $validated['user_id'],
@@ -522,7 +554,7 @@ class BitacoraController extends Controller
             'folio_consecutive' => $consecutive,
             'folio_number' => $folioNumber,
             'date' => $validated['date'],
-            'notes' => $validated['notes'] ?? null,
+            'notes' => $finalNotes,
         ]);
 
         // Synchronize numeric consecutive in Folio catalog if prefix exists
@@ -656,7 +688,7 @@ class BitacoraController extends Controller
                 'folio_consecutive' => $validated['folio_consecutive'] ?? $bitacora->folio_consecutive,
                 'folio_number' => $validated['folio_number'] ?? $bitacora->folio_number,
                 'date' => $validated['date'] ?? $bitacora->date,
-                'notes' => $validated['notes'] ?? $bitacora->notes,
+                'notes' => $bitacora->notes,
             ]);
 
             // Sync activities and their children
@@ -942,6 +974,11 @@ class BitacoraController extends Controller
                     ]);
                 }
             }
+        }
+
+        if (! $request->user()->hasRole('admin')) {
+            $validated['user_id'] = $bitacora->user_id;
+            $validated['branch_id'] = $bitacora->branch_id;
         }
 
         return $validated;
