@@ -533,7 +533,7 @@ const submit = () => {
             </div>
 
             <!-- Read-only Summary View -->
-            <div v-if="!showGeneralDataEdit" class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs sm:text-sm">
+            <div v-if="!showGeneralDataEdit" class="grid gap-4 text-xs sm:text-sm" :class="isAdmin ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2'">
                 <div>
                     <span class="text-zinc-400 block text-[11px] font-semibold uppercase">Cliente</span>
                     <span class="font-bold text-zinc-900 dark:text-zinc-100">{{ selectedClient?.name || bitacora.client?.name || 'Cliente General' }}</span>
@@ -541,12 +541,12 @@ const submit = () => {
                         Sucursal: {{ (availableClientBranches.find(b => b.id === Number(form.client_branch_id))?.name) || bitacora.client_branch?.name || bitacora.clientBranch?.name || 'No Aplica / Matriz' }}
                     </span>
                 </div>
-                <div>
+                <div v-if="isAdmin">
                     <span class="text-zinc-400 block text-[11px] font-semibold uppercase">Encargado Responsable</span>
                     <span class="font-bold text-zinc-900 dark:text-zinc-100">{{ selectedUser?.name || bitacora.user?.name || 'No asignado' }}</span>
                     <span class="text-zinc-400 block text-[11px] mt-0.5">{{ selectedUser?.email || bitacora.user?.email }}</span>
                 </div>
-                <div>
+                <div v-if="isAdmin">
                     <span class="text-zinc-400 block text-[11px] font-semibold uppercase">Sucursal Operativa</span>
                     <span class="font-bold text-zinc-900 dark:text-zinc-100">{{ (availableBranches.find(b => b.id === Number(form.branch_id))?.name) || bitacora.branch?.name }}</span>
                     <span class="text-zinc-400 block text-[11px] mt-0.5 font-mono">Fecha: {{ form.date }}</span>
@@ -554,12 +554,13 @@ const submit = () => {
                 <div>
                     <span class="text-zinc-400 block text-[11px] font-semibold uppercase">Total Actividades</span>
                     <span class="font-bold text-indigo-600 dark:text-indigo-400">{{ form.activities.length }} actividad(es)</span>
+                    <span v-if="!isAdmin" class="text-zinc-400 block text-[11px] mt-0.5 font-mono">Fecha: {{ form.date }}</span>
                 </div>
             </div>
 
             <!-- Editable Fields View -->
             <div v-else class="space-y-4 pt-1">
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="grid gap-4" :class="isAdmin ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1'">
                     <!-- Fecha de la bitacora -->
                     <div class="space-y-1.5">
                         <Label for="edit_date" class="text-xs font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
@@ -581,24 +582,12 @@ const submit = () => {
                     </div>
 
                     <!-- Usuario Encargado -->
-                    <div class="space-y-1.5">
-                        <Label for="edit_user_id" class="text-xs font-semibold text-zinc-700 dark:text-zinc-300 flex items-center justify-between">
-                            <span class="flex items-center gap-1.5">
-                                <UserCheck class="h-4 w-4 text-indigo-600" />
-                                Usuario Responsable *
-                            </span>
-                            <span v-if="!isAdmin" class="text-[10px] text-amber-600 font-semibold flex items-center gap-1">
-                                <Lock class="h-3 w-3" /> Bloqueado
-                            </span>
+                    <div v-if="isAdmin" class="space-y-1.5">
+                        <Label for="edit_user_id" class="text-xs font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
+                            <UserCheck class="h-4 w-4 text-indigo-600" />
+                            Usuario Responsable *
                         </Label>
-                        <div v-if="!isAdmin" class="p-2.5 bg-zinc-100 dark:bg-zinc-800/60 rounded-xl border border-zinc-200 dark:border-zinc-700 flex items-center justify-between">
-                            <span class="font-bold text-xs text-zinc-800 dark:text-zinc-200">
-                                {{ selectedUser?.name || bitacora.user?.name }}
-                            </span>
-                            <Lock class="h-3.5 w-3.5 text-zinc-400" />
-                        </div>
                         <select
-                            v-else
                             id="edit_user_id"
                             v-model="form.user_id"
                             required
@@ -611,27 +600,17 @@ const submit = () => {
                     </div>
 
                     <!-- Sucursal Operativa ICC (filtrada por usuario) -->
-                    <div class="space-y-1.5">
+                    <div v-if="isAdmin" class="space-y-1.5">
                         <Label for="edit_branch_id" class="text-xs font-semibold text-zinc-700 dark:text-zinc-300 flex items-center justify-between">
                             <span class="flex items-center gap-1.5">
                                 <Building2 class="h-4 w-4 text-indigo-600" />
                                 Sucursal Operativa *
                             </span>
-                            <span v-if="!isAdmin" class="text-[10px] text-amber-600 font-semibold flex items-center gap-1">
-                                <Lock class="h-3 w-3" /> Bloqueado
-                            </span>
-                            <span v-else-if="selectedUser?.branches?.length" class="text-[10px] text-indigo-600">
+                            <span v-if="selectedUser?.branches?.length" class="text-[10px] text-indigo-600">
                                 Según usuario
                             </span>
                         </Label>
-                        <div v-if="!isAdmin" class="p-2.5 bg-zinc-100 dark:bg-zinc-800/60 rounded-xl border border-zinc-200 dark:border-zinc-700 flex items-center justify-between">
-                            <span class="font-bold text-xs text-zinc-800 dark:text-zinc-200">
-                                {{ selectedBranch?.name || bitacora.branch?.name }}
-                            </span>
-                            <Lock class="h-3.5 w-3.5 text-zinc-400" />
-                        </div>
                         <select
-                            v-else
                             id="edit_branch_id"
                             v-model="form.branch_id"
                             required

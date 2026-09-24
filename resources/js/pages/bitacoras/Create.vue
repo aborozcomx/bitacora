@@ -622,7 +622,7 @@ const submit = () => {
                     <!-- ======================================================== -->
                     <!-- SECTION 2: USUARIO RESPONSABLE & SUCURSAL OPERATIVA -->
                     <!-- ======================================================== -->
-                    <div class="space-y-4 pt-2">
+                    <div v-if="isAdmin" class="space-y-4 pt-2">
                         <div class="flex items-center justify-between flex-wrap gap-2">
                             <div class="flex items-center gap-2">
                                 <span class="flex items-center justify-center h-6 w-6 rounded-lg bg-indigo-600 text-white font-bold text-xs">
@@ -651,7 +651,7 @@ const submit = () => {
                                         <UserCheck class="h-4 w-4 text-indigo-600" />
                                         Usuario Encargado / Responsable *
                                     </span>
-                                    <span v-if="isInheritedMode || !isAdmin" class="text-[10px] text-amber-600 font-semibold flex items-center gap-1">
+                                    <span v-if="isInheritedMode" class="text-[10px] text-amber-600 font-semibold flex items-center gap-1">
                                         <Lock class="h-3 w-3" /> Bloqueado
                                     </span>
                                 </Label>
@@ -662,18 +662,8 @@ const submit = () => {
                                             {{ selectedUser?.name || inheritedFolio?.user_name }}
                                         </span>
                                         <span class="text-[11px] text-zinc-500">
-                                            {{ !isAdmin ? 'Asignado a tu usuario' : `Heredado del folio ${previewFolioNumber}` }}
+                                            Heredado del folio {{ previewFolioNumber }}
                                         </span>
-                                    </div>
-                                    <Lock class="h-4 w-4 text-zinc-400" />
-                                </div>
-
-                                <div v-else-if="!isAdmin" class="p-3 bg-zinc-100 dark:bg-zinc-800/60 rounded-xl border border-zinc-200 dark:border-zinc-700 flex items-center justify-between">
-                                    <div>
-                                        <span class="font-bold text-xs text-zinc-900 dark:text-zinc-100 block">
-                                            {{ selectedUser?.name }}
-                                        </span>
-                                        <span class="text-[11px] text-zinc-500">Asignado a tu usuario (no modificable)</span>
                                     </div>
                                     <Lock class="h-4 w-4 text-zinc-400" />
                                 </div>
@@ -700,7 +690,7 @@ const submit = () => {
                                         <Building2 class="h-4 w-4 text-indigo-600" />
                                         Sucursal Operativa (ICC) *
                                     </span>
-                                    <span v-if="isInheritedMode || !isAdmin" class="text-[10px] text-amber-600 font-semibold flex items-center gap-1">
+                                    <span v-if="isInheritedMode" class="text-[10px] text-amber-600 font-semibold flex items-center gap-1">
                                         <Lock class="h-3 w-3" /> Bloqueado
                                     </span>
                                     <span v-else-if="selectedUser?.branches?.length" class="text-[10px] text-indigo-600 dark:text-indigo-400 font-normal">
@@ -714,16 +704,6 @@ const submit = () => {
                                             {{ selectedBranch?.name || inheritedFolio?.branch_name }}
                                         </span>
                                         <span class="text-[11px] text-zinc-500">Heredada del folio {{ previewFolioNumber }}</span>
-                                    </div>
-                                    <Lock class="h-4 w-4 text-zinc-400" />
-                                </div>
-
-                                <div v-else-if="!isAdmin" class="p-3 bg-zinc-100 dark:bg-zinc-800/60 rounded-xl border border-zinc-200 dark:border-zinc-700 flex items-center justify-between">
-                                    <div>
-                                        <span class="font-bold text-xs text-zinc-900 dark:text-zinc-100 block">
-                                            {{ selectedBranch?.name }}
-                                        </span>
-                                        <span class="text-[11px] text-zinc-500">Sucursal asignada a tu usuario</span>
                                     </div>
                                     <Lock class="h-4 w-4 text-zinc-400" />
                                 </div>
@@ -756,7 +736,7 @@ const submit = () => {
                         <div class="flex items-center justify-between flex-wrap gap-2">
                             <div class="flex items-center gap-2">
                                 <span class="flex items-center justify-center h-6 w-6 rounded-lg bg-indigo-600 text-white font-bold text-xs">
-                                    3
+                                    {{ isAdmin ? 3 : 2 }}
                                 </span>
                                 <h2 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
                                     <Users class="h-4 w-4 text-indigo-600" />
